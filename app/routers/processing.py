@@ -10,7 +10,6 @@ from datetime import datetime
 
 from app import models, database
 from app.auth import get_current_user_from_cookie
-from app.processing.word_engine import OptimizedDocumentProcessor
 from app.processing.ppd_engine import PPDEngine
 from app.processing.permissions_engine import PermissionsEngine
 from app.processing.technical_engine import TechnicalEngine
@@ -137,12 +136,11 @@ def background_processing_task(
                 success_msg = "Word to XML conversion completed"
 
             else:
-                is_macro_fallback = True
-                with OptimizedDocumentProcessor() as processor:
-                    errors = processor.process_document(file_path, process_type)
-                if errors:
-                    raise Exception(f"Macro Errors: {'; '.join(errors)}")
-                success_msg = f"{process_type} processing completed"
+                # Word macro processing is not supported on Linux
+                raise HTTPException(
+                    status_code=501,
+                    detail=f"Processing type '{process_type}' is not supported. Word macro processing is only available on Windows."
+                )
 
             # 2. Register Generated Files
             if generated_files:
