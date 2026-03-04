@@ -603,7 +603,7 @@ async def create_chapter(
     
     # Create directory structure for the chapter
     # data/uploads/{CODE}/{CH_NUM}/
-    chapter_base_dir = f"data/uploads/{project.code}/{number}"
+    chapter_base_dir = f"{UPLOAD_DIR}/{project.code}/{number}"
     categories = ["Manuscript", "Art", "InDesign", "Proof", "XML"]
     
     for category in categories:
@@ -643,8 +643,8 @@ async def rename_chapter(
     
     # Rename directory if number changed
     if old_number != number:
-        old_dir = f"data/uploads/{project.code}/{old_number}"
-        new_dir = f"data/uploads/{project.code}/{number}"
+        old_dir = f"{UPLOAD_DIR}/{project.code}/{old_number}"
+        new_dir = f"{UPLOAD_DIR}/{project.code}/{number}"
         if os.path.exists(old_dir):
             os.rename(old_dir, new_dir)
     
@@ -776,7 +776,7 @@ async def upload_chapter_files(
     # Storage Path: data/uploads/{CODE}/CH{XX}/{CATEGORY}
     # Clean category name for path (e.g. "InDesign" -> "InDesign")
     safe_cat = category.replace(" ", "_")
-    base_path = f"data/uploads/{project.code}/{chapter.number}/{safe_cat}"
+    base_path = f"{UPLOAD_DIR}/{project.code}/{chapter.number}/{safe_cat}"
     os.makedirs(base_path, exist_ok=True)
 
     for upload in files:
