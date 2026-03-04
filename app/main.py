@@ -1,3 +1,6 @@
+from app.core.paths import ensure_runtime_dirs
+ensure_runtime_dirs()
+
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware

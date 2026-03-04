@@ -1,3 +1,4 @@
+from app.services.file_service import UPLOAD_DIR
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
@@ -248,7 +249,7 @@ async def run_file_process(
         chapter = db.query(models.Chapter).filter(models.Chapter.id == file_record.chapter_id).first()
         
         if project and chapter:
-            backup_dir = os.path.abspath(f"data/uploads/{project.code}/{chapter.number}/{file_record.category}/Archive")
+            backup_dir = os.path.abspath(f"{UPLOAD_DIR}/{project.code}/{chapter.number}/{file_record.category}/Archive")
         else:
             backup_dir = os.path.join(os.path.dirname(file_path), "Archive")
             

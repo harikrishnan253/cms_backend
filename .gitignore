@@ -24,3 +24,7 @@ ref_cache.json
 
 # Celery / misc
 celerybeat-schedule
+
+# Local runtime
+runtime/
+app/processing/legacy/ref_cache.json

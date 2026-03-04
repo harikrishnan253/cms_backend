@@ -5,7 +5,8 @@ import shutil
 import os
 from datetime import datetime
 
-UPLOAD_DIR = "data/uploads"
+from app.core.paths import UPLOADS_DIR
+UPLOAD_DIR = str(UPLOADS_DIR)
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 def save_upload_file(upload_file: UploadFile, destination: str):

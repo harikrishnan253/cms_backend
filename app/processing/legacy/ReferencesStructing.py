@@ -74,7 +74,8 @@ PREF_DOI_THRESHOLD = 0.5   # prefer DOI source if similarity >= this
 import json
 import atexit
 
-REF_CACHE_FILE = Path("ref_cache.json")
+from app.core.paths import REF_CACHE_PATH
+REF_CACHE_FILE = REF_CACHE_PATH
 REF_CACHE = {
     "crossref_doi": {},
     "crossref_search": {},
