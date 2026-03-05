@@ -28,3 +28,5 @@ celerybeat-schedule
 # Local runtime
 runtime/
 app/processing/legacy/ref_cache.json
+*.save
+*.save

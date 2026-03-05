@@ -1,82 +1,51 @@
-version: '3.8'
-
-# ─────────────────────────────────────────────────────────────────────────────
-# CMS Backend — Full Docker Compose Stack
-#
-# Services:
-#   db            PostgreSQL 15
-#   redis         Redis (Celery broker + backend)
-#   backend       FastAPI app (Gunicorn + Uvicorn workers)
-#   celery_worker Celery background task worker
-#   collabora     LibreOffice Online (Collabora CODE) for in-browser DOCX editing
-#   nginx         Nginx reverse proxy (public entry point on port 80)
-# ─────────────────────────────────────────────────────────────────────────────
+version: "3.8"
 
 services:
-
-  # ── PostgreSQL Database ───────────────────────────────────────────────────
   db:
     image: postgres:15
     container_name: cms_db
+    env_file: .env
     volumes:
       - postgres_data:/var/lib/postgresql/data
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-cms_user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cms_pass}
       POSTGRES_DB: ${POSTGRES_DB:-cms_db}
-    ports:
-      - "5432:5432"
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cms_user} -d ${POSTGRES_DB:-cms_db}" ]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cms_user} -d ${POSTGRES_DB:-cms_db}"]
       interval: 10s
       timeout: 5s
       retries: 5
     restart: always
 
-  # ── Redis (Celery broker + result backend) ────────────────────────────────
   redis:
     image: redis:7-alpine
     container_name: cms_redis
     ports:
       - "6379:6379"
     healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
+      test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
     restart: always
 
-  # ── FastAPI Backend ───────────────────────────────────────────────────────
-  # Not exposed directly — traffic routed through Nginx on port 80
   backend:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: cms_backend
+    env_file: .env
     volumes:
-      # Persist uploads, outputs, and data between restarts
       - ./uploads:/app/uploads
       - ./outputs:/app/outputs
       - ./data:/app/data
       - ./temp_reports:/app/temp_reports
-      # Persist reference cache across restarts
       - ./ref_cache.json:/app/ref_cache.json
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-cms_user}:${POSTGRES_PASSWORD:-cms_pass}@db:5432/${POSTGRES_DB:-cms_db}
       REDIS_URL: redis://redis:6379/0
-      SECRET_KEY: ${SECRET_KEY:-changeme_in_production}
-      ALGORITHM: ${ALGORITHM:-HS256}
-      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
-      PROJECT_NAME: ${PROJECT_NAME:-Publishing CMS}
-      API_V1_STR: ${API_V1_STR:-/api/v1}
-      # Collabora Online URLs
-      COLLABORA_URL: ${COLLABORA_URL:-http://collabora:9980}
-      WOPI_BASE_URL: ${WOPI_BASE_URL:-http://backend:8000}
-      # Gemini AI Key (for AI extractor engine)
-      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
-      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
     expose:
-      - "8000" # Internal only — Nginx proxies to this
+      - "8000"
     depends_on:
       db:
         condition: service_healthy
@@ -84,12 +53,12 @@ services:
         condition: service_healthy
     restart: always
 
-  # ── Celery Worker (background processing jobs) ────────────────────────────
   celery_worker:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: cms_celery_worker
+    env_file: .env
     volumes:
       - ./uploads:/app/uploads
       - ./outputs:/app/outputs
@@ -97,11 +66,7 @@ services:
       - ./temp_reports:/app/temp_reports
       - ./ref_cache.json:/app/ref_cache.json
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-cms_user}:${POSTGRES_PASSWORD:-cms_pass}@db:5432/${POSTGRES_DB:-cms_db}
       REDIS_URL: redis://redis:6379/0
-      SECRET_KEY: ${SECRET_KEY:-changeme_in_production}
-      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
-      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
     command: celery -A app.core.celery_app worker --loglevel=info --concurrency=4
     depends_on:
       db:
@@ -110,40 +75,33 @@ services:
         condition: service_healthy
     restart: always
 
-  # ── Collabora (LibreOffice Online) ───────────────────────────────────────
-  # Provides in-browser DOCX editing via the WOPI protocol.
   collabora:
     image: collabora/code
     container_name: cms_collabora
-    ports:
-      - "9980:9980"
+    env_file: .env
     environment:
-      aliasgroup1: http://backend:8000,http://host.docker.internal:8000
+      aliasgroup1: http://10.1.1.18:8080
       DONT_GEN_SSL_CERT: "YES"
-      extra_params: "--o:ssl.enable=false --o:ssl.termination=true"
+      extra_params: "--o:ssl.enable=false --o:ssl.termination=false"
     extra_hosts:
-      # Required on Linux: maps host.docker.internal to the Docker host gateway
       - "host.docker.internal:host-gateway"
+    expose:
+      - "9980"
     restart: always
 
-  # ── Nginx Reverse Proxy ───────────────────────────────────────────────────
-  # Public entry point. Routes port 80 → backend:8000.
-  # For HTTPS: install certbot inside the container or mount certs.
   nginx:
     image: nginx:alpine
     container_name: cms_nginx
     ports:
-      - "80:80"
-      - "443:443"
+      - "8080:80"
+      - "8443:443"
     volumes:
-      # Nginx site config
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      # SSL certificates (populated by certbot on the host, then mounted in)
       - /etc/letsencrypt:/etc/letsencrypt:ro
-      # Shared webroot for Let's Encrypt ACME challenge
       - certbot_webroot:/var/www/certbot:ro
     depends_on:
       - backend
+      - collabora
     restart: always
 
 volumes:

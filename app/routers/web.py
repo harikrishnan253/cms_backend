@@ -480,7 +480,7 @@ async def create_project_with_files(
 
     # 3. Process Files
     if files:
-        base_path = ff"{UPLOAD_DIR}/{code}"
+        base_path = f"{UPLOAD_DIR}/{code}"
         os.makedirs(base_path, exist_ok=True)
 
         for upload in files:
@@ -518,7 +518,7 @@ async def create_project_with_files(
 
             # Structure: data/uploads/{CODE}/{CH}/{Category}/filename
             safe_cat = category.replace(" ", "_")
-            chapter_path = ff"{UPLOAD_DIR}/{code}/{target_ch_num}/{safe_cat}"
+            chapter_path = f"{UPLOAD_DIR}/{code}/{target_ch_num}/{safe_cat}"
             os.makedirs(chapter_path, exist_ok=True)
             
             file_path = f"{chapter_path}/{upload.filename}"
@@ -674,7 +674,7 @@ async def download_chapter_zip(
     import tempfile
     from fastapi.responses import FileResponse
     
-    chapter_dir = ff"{UPLOAD_DIR}/{project.code}/{chapter.number}"
+    chapter_dir = f"{UPLOAD_DIR}/{project.code}/{chapter.number}"
     
     if not os.path.exists(chapter_dir):
         raise HTTPException(status_code=404, detail="Chapter directory not found")
@@ -715,7 +715,7 @@ async def delete_chapter(
     
     # Delete directory
     import shutil
-    chapter_dir = ff"{UPLOAD_DIR}/{project.code}/{chapter.number}"
+    chapter_dir = f"{UPLOAD_DIR}/{project.code}/{chapter.number}"
     if os.path.exists(chapter_dir):
         shutil.rmtree(chapter_dir)
     
@@ -928,7 +928,7 @@ async def delete_project(
     if not project: raise HTTPException(status_code=404)
     
     # Delete Folder
-    project_path = ff"{UPLOAD_DIR}/{project.code}"
+    project_path = f"{UPLOAD_DIR}/{project.code}"
     if os.path.exists(project_path):
         shutil.rmtree(project_path, ignore_errors=True)
         
@@ -953,7 +953,7 @@ async def delete_chapter(
     
     # Delete Chapter Folder
     # Path: data/uploads/{CODE}/{CH_NUM}
-    chapter_path = ff"{UPLOAD_DIR}/{project.code}/{chapter.number}"
+    chapter_path = f"{UPLOAD_DIR}/{project.code}/{chapter.number}"
     if os.path.exists(chapter_path):
         shutil.rmtree(chapter_path, ignore_errors=True)
         
