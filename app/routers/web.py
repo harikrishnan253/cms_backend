@@ -342,6 +342,26 @@ async def update_user_role(
     db.commit()
     return RedirectResponse(url="/admin/users?msg=Role+Updated", status_code=status.HTTP_302_FOUND)
 
+
+@router.post("/admin/users/{user_id}/delete")
+async def admin_delete_user(
+    request: Request,
+    user_id: int,
+    user=Depends(get_current_user_from_cookie),
+    db: Session = Depends(database.get_db)
+):
+    if not user:
+        return RedirectResponse(url="/login", status_code=302)
+    from app.models import User
+    target = db.query(User).filter(User.id == user_id).first()
+    if not target:
+        return RedirectResponse(url="/admin/users?msg=User+not+found", status_code=302)
+    if target.username == user.username:
+        return RedirectResponse(url="/admin/users?msg=Cannot+delete+yourself", status_code=302)
+    db.delete(target)
+    db.commit()
+    return RedirectResponse(url="/admin/users?msg=User+deleted", status_code=302)
+
 @router.post("/admin/users/{user_id}/status")
 async def toggle_user_status(
     user_id: int,
@@ -1155,3 +1175,106 @@ async def technical_editor_page(
         "technical_editor_form.html",
         {"request": request, "file": file_record, "user": user_data}
     )
+
+
+@router.get("/admin/users/{user_id}/edit", response_class=HTMLResponse)
+async def admin_edit_user_page(
+    request: Request,
+    user_id: int,
+    user=Depends(get_current_user_from_cookie),
+    db: Session = Depends(database.get_db)
+):
+    if not user:
+        return RedirectResponse(url="/login", status_code=302)
+    from app.models import User, Role
+    target = db.query(User).filter(User.id == user_id).first()
+    if not target:
+        raise HTTPException(status_code=404, detail="User not found")
+    roles = db.query(Role).all()
+    return templates.TemplateResponse("admin_edit_user.html", {
+        "request": request, "user": user, "target": target, "roles": roles
+    })
+
+
+@router.post("/admin/users/{user_id}/edit")
+async def admin_edit_user(
+    request: Request,
+    user_id: int,
+    user=Depends(get_current_user_from_cookie),
+    db: Session = Depends(database.get_db)
+):
+    if not user:
+        return RedirectResponse(url="/login", status_code=302)
+    from app.models import User, Role
+    form = await request.form()
+    target = db.query(User).filter(User.id == user_id).first()
+    if not target:
+        raise HTTPException(status_code=404, detail="User not found")
+    if form.get("email"):
+        target.email = form["email"]
+    db.commit()
+    return RedirectResponse(url="/admin/users?msg=User+updated", status_code=302)
+
+
+@router.get("/admin/users/{user_id}/password", response_class=HTMLResponse)
+async def admin_change_password_page(
+    request: Request,
+    user_id: int,
+    user=Depends(get_current_user_from_cookie),
+    db: Session = Depends(database.get_db)
+):
+    if not user:
+        return RedirectResponse(url="/login", status_code=302)
+    from app.models import User
+    target = db.query(User).filter(User.id == user_id).first()
+    if not target:
+        raise HTTPException(status_code=404, detail="User not found")
+    return templates.TemplateResponse("admin_change_password.html", {
+        "request": request, "user": user, "target": target
+    })
+
+
+@router.post("/admin/users/{user_id}/password")
+async def admin_change_password(
+    request: Request,
+    user_id: int,
+    user=Depends(get_current_user_from_cookie),
+    db: Session = Depends(database.get_db)
+):
+    if not user:
+        return RedirectResponse(url="/login", status_code=302)
+    from app.models import User
+    from app.auth import hash_password
+    form = await request.form()
+    target = db.query(User).filter(User.id == user_id).first()
+    if not target:
+        raise HTTPException(status_code=404, detail="User not found")
+    new_password = form.get("new_password", "")
+    if len(new_password) < 6:
+        return templates.TemplateResponse("admin_change_password.html", {
+            "request": request, "user": user, "target": target,
+            "error": "Password must be at least 6 characters"
+        })
+    target.password_hash = hash_password(new_password)
+    db.commit()
+    return RedirectResponse(url="/admin/users?msg=Password+changed", status_code=302)
+
+
+@router.post("/admin/users/{user_id}/delete")
+async def admin_delete_user(
+    request: Request,
+    user_id: int,
+    user=Depends(get_current_user_from_cookie),
+    db: Session = Depends(database.get_db)
+):
+    if not user:
+        return RedirectResponse(url="/login", status_code=302)
+    from app.models import User
+    target = db.query(User).filter(User.id == user_id).first()
+    if not target:
+        return RedirectResponse(url="/admin/users?msg=User+not+found", status_code=302)
+    if target.username == user.username:
+        return RedirectResponse(url="/admin/users?msg=Cannot+delete+yourself", status_code=302)
+    db.delete(target)
+    db.commit()
+    return RedirectResponse(url="/admin/users?msg=User+deleted", status_code=302)
