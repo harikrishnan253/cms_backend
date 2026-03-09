@@ -1,0 +1,824 @@
+{% extends "base.html" %}
+
+{% block title %}{{ chapter.title }} - {{ active_tab }}{% endblock %}
+
+{% block content %}
+<!-- Loading Overlay (Preserved) -->
+<div id="processingOverlay"
+    class="position-fixed top-0 start-0 w-100 h-100 d-none justify-content-center align-items-center"
+    style="background: rgba(255,255,255,0.95); z-index: 9999; backdrop-filter: blur(10px);">
+    <div class="text-center">
+        <div class="spinner-grow text-primary" style="width: 3rem; height: 3rem;" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <div class="spinner-grow text-secondary" style="width: 3rem; height: 3rem; animation-delay: 0.2s;"
+            role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <div class="spinner-grow text-success" style="width: 3rem; height: 3rem; animation-delay: 0.4s;" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <h4 class="mt-4 text-dark fw-bold">Processing Document...</h4>
+        <p class="text-muted" id="processingStatus">Please wait, this may take a moment.</p>
+    </div>
+</div>
+
+<!-- JavaScript Functions (Preserved) -->
+<script>
+    window.runProcess = function (event, element) {
+        console.log('=== runProcess STARTED ===');
+        event.preventDefault();
+        event.stopPropagation();
+        const fileId = element.getAttribute('data-file-id');
+        const processType = element.getAttribute('data-process-type');
+        console.log('File ID:', fileId, 'Process Type:', processType);
+        if (!fileId || !processType) { alert("Error: Missing file or process type information"); return; }
+        if (!confirm(`Start ${processType.replace(/_/g, ' ')}?\n\nThis will:\n Lock the file\n Create a backup\n Start processing in background`)) { return; }
+        const overlay = document.getElementById('processingOverlay');
+        const statusText = document.getElementById('processingStatus');
+        overlay.classList.remove('d-none');
+        overlay.classList.add('d-flex');
+        statusText.innerText = "Initializing process...";
+        const url = `/api/v1/processing/files/${fileId}/process/${processType}`;
+        fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            credentials: 'include'
+        }).then(response => {
+            console.log('Response status:', response.status);
+            return response.json().then(data => ({ status: response.status, data: data }));
+        }).then(result => {
+            if (result.status === 200) {
+                statusText.innerText = result.data.message || "Processing started! Refreshing...";
+                console.log(" SUCCESS");
+                setTimeout(() => { window.location.reload(); }, 2000);
+            } else { throw new Error(result.data.detail || result.data.message || "Processing failed"); }
+        }).catch(error => {
+            console.error("ERROR:", error.message);
+            overlay.classList.add('d-none');
+            overlay.classList.remove('d-flex');
+            alert(`Error: ${error.message}`);
+        });
+    };
+
+    window.runMultipleReferenceChecks = function (fileId) {
+        const modalId = `refCheckModal${fileId}`;
+        const modal = document.getElementById(modalId);
+        if (!modal) { alert("Error: Modal not found"); return; }
+        const allCheckboxes = modal.querySelectorAll('.ref-check-input');
+        const checkedCheckboxes = Array.from(allCheckboxes).filter(cb => cb.checked);
+        const selectedTypes = checkedCheckboxes.map(cb => cb.value);
+        if (selectedTypes.length === 0) { alert("Please select at least one reference check option"); return; }
+        const modalInstance = bootstrap.Modal.getInstance(modal);
+        if (modalInstance) modalInstance.hide();
+        if (!confirm(`Run ${selectedTypes.length} reference check(s)?\n\nThis will:\n Lock the file\n Create a backup\n Start processing in background`)) { return; }
+        runReferenceCheckSequence(fileId, selectedTypes, 0);
+    };
+
+    function runReferenceCheckSequence(fileId, processes, index) {
+        if (index >= processes.length) { setTimeout(() => window.location.reload(), 1000); return; }
+        const processType = processes[index];
+        const overlay = document.getElementById('processingOverlay');
+        const statusText = document.getElementById('processingStatus');
+        overlay.classList.remove('d-none');
+        overlay.classList.add('d-flex');
+        statusText.innerText = `Running ${processType.replace(/_/g, ' ')} (${index + 1}/${processes.length})...`;
+        fetch(`/api/v1/processing/files/${fileId}/process/${processType}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            credentials: 'include'
+        }).then(response => response.json().then(data => ({ status: response.status, data: data })))
+            .then(result => {
+                if (result.status === 200) { setTimeout(() => runReferenceCheckSequence(fileId, processes, index + 1), 1000); }
+                else { throw new Error(result.data.detail || result.data.message || "Processing failed"); }
+            }).catch(error => {
+                console.error("ERROR:", error.message);
+                overlay.classList.add('d-none');
+                overlay.classList.remove('d-flex');
+                alert(`Error during ${processType}: ${error.message}`);
+            });
+    }
+
+    window.runStructuring = function (fileId) {
+        const modalId = `structuringModal${fileId}`;
+        const modal = document.getElementById(modalId);
+        const mode = document.querySelector(`input[name="structMode${fileId}"]:checked`).value;
+        const modalInstance = bootstrap.Modal.getInstance(modal);
+        if (modalInstance) modalInstance.hide();
+        const overlay = document.getElementById('processingOverlay');
+        const statusText = document.getElementById('processingStatus');
+        overlay.classList.remove('d-none');
+        overlay.classList.add('d-flex');
+        statusText.innerText = `Starting Structuring (${mode})...`;
+        const url = `/api/v1/processing/files/${fileId}/process/structuring?mode=${mode}`;
+        fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include'
+        }).then(response => response.json().then(data => ({ status: response.status, data: data })))
+            .then(result => {
+                if (result.status === 200) {
+                    statusText.innerText = "Processing started! Refreshing...";
+                    setTimeout(() => { window.location.reload(); }, 2000);
+                } else { throw new Error(result.data.detail || result.data.message || "Processing failed"); }
+            }).catch(error => {
+                overlay.classList.add('d-none');
+                overlay.classList.remove('d-flex');
+                alert(`Error: ${error.message}`);
+            });
+    };
+</script>
+
+<div class="explorer-container">
+    <!-- Ribbon / Toolbar -->
+    <div class="explorer-toolbar">
+        <div class="btn-group me-3">
+            <button class="btn btn-sm btn-light border-0" onclick="window.location.href='/projects/{{ project.id }}'"><i
+                    class="fas fa-arrow-up"></i></button>
+            <button class="btn btn-sm btn-light border-0" onclick="history.back()"><i
+                    class="fas fa-arrow-left"></i></button>
+            <button class="btn btn-sm btn-light border-0" onclick="history.forward()"><i
+                    class="fas fa-arrow-right"></i></button>
+            <button class="btn btn-sm btn-light border-0" onclick="window.location.reload()"><i
+                    class="fas fa-sync-alt"></i></button>
+        </div>
+
+        <!-- Address Bar -->
+        <div class="explorer-address-bar rounded">
+            <i class="fas fa-folder-open text-warning me-2"></i>
+            <span>Projects <i class="fas fa-chevron-right mx-1 text-muted"></i> {{ project.code }} <i
+                    class="fas fa-chevron-right mx-1 text-muted"></i> {{ chapter.title }} <i
+                    class="fas fa-chevron-right mx-1 text-muted"></i> {{ active_tab }}</span>
+        </div>
+
+        <!-- Search -->
+        <div class="input-group input-group-sm" style="width: 250px;">
+            <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
+            <input type="text" class="form-control border-start-0" placeholder="Search {{ active_tab }}">
+        </div>
+    </div>
+
+    <!-- Command Bar -->
+    <div class="explorer-toolbar py-1 bg-white border-bottom">
+        <button class="btn btn-sm btn-link text-dark text-decoration-none" data-bs-toggle="modal"
+            data-bs-target="#uploadModal">
+            <i class="fas fa-cloud-upload-alt text-primary me-1"></i> Upload
+        </button>
+        <div class="vr mx-2"></div>
+        <button class="btn btn-sm btn-link text-dark text-decoration-none" id="viewToggleBtn">
+            <i class="fas fa-list me-1"></i> View
+        </button>
+        <div class="vr mx-2"></div>
+        <span class="text-muted small">Select a file to see actions</span>
+    </div>
+
+    <!-- Main Explorer Body -->
+    <div class="explorer-body">
+        <!-- Sidebar Navigation -->
+        <div class="explorer-sidebar">
+            <div class="text-muted small px-3 mb-2 mt-2">Navigation</div>
+            <a href="/projects/{{ project.id }}" class="nav-tree-item">
+                <i class="fas fa-level-up-alt text-secondary"></i> .. (Up One Level)
+            </a>
+            <div class="px-3 py-1 fw-bold text-dark border-bottom mb-2 mt-1">{{ chapter.title }}</div>
+
+            {% set tabs = ['Art', 'Manuscript', 'InDesign', 'Proof', 'XML'] %}
+            {% for tab in tabs %}
+            <a href="?tab={{ tab }}" class="nav-tree-item {% if active_tab == tab %}active{% endif %}">
+                <i class="fas {% if active_tab == tab %}fa-folder-open{% else %}fa-folder{% endif %} text-warning"></i>
+                {{ tab }}
+            </a>
+            {% endfor %}
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="explorer-main">
+            <!-- Grid View -->
+            <div class="explorer-grid" id="gridViewContainer">
+                {% for file in files %}
+                <div class="explorer-grid-item position-relative group-action-container">
+                    <!-- Context Menu Trigger (Three dots) -->
+                    <div class="dropdown position-absolute top-0 end-0 mt-1 me-1">
+                        <button class="btn btn-sm btn-light p-0 border-0" type="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-ellipsis-v text-muted"></i>
+                        </button>
+                        <ul class="dropdown-menu shadow">
+                            <li><a class="dropdown-item" href="/projects/files/{{ file.id }}/download"><i
+                                        class="fas fa-download me-2"></i>Download</a></li>
+
+                            {% if file.filename.lower().endswith('.docx') %}
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li class="dropdown-header small text-muted">PROCESSING</li>
+                            {% if 'Editor' in user.roles or 'CopyEditor' in user.roles or 'Admin' in user.roles %}
+                            <li><a class="dropdown-item" href="javascript:void(0);" data-file-id="{{ file.id }}"
+                                    data-process-type="language" onclick="runProcess(event, this)">Language Edit</a>
+                            </li>
+                            <li><a class="dropdown-item" href="javascript:void(0);" data-file-id="{{ file.id }}"
+                                    data-process-type="technical" onclick="runProcess(event, this)">Technical Edit</a>
+                            </li>
+                            <li><a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="modal"
+                                    data-bs-target="#refCheckModal{{ file.id }}">Reference Check</a></li>
+                            <li><a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="modal"
+                                    data-bs-target="#structuringModal{{ file.id }}">Structuring</a></li>
+                            {% endif %}
+                            {% if 'PPD' in user.roles or 'ProjectManager' in user.roles or 'Admin' in user.roles %}
+                            <li><a class="dropdown-item" href="javascript:void(0);" data-file-id="{{ file.id }}"
+                                    data-process-type="ppd" onclick="runProcess(event, this)">PPD Generation</a></li>
+                            {% endif %}
+                            {% if 'PermissionsManager' in user.roles or 'ProjectManager' in user.roles or 'Admin' in
+                            user.roles %}
+                            <li><a class="dropdown-item" href="javascript:void(0);" data-file-id="{{ file.id }}"
+                                    data-process-type="permissions" onclick="runProcess(event, this)">Permissions
+                                    Check</a></li>
+                            {% endif %}
+                            {% endif %}
+
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            {% if not file.is_checked_out %}
+                            <li>
+                                <form action="/projects/files/{{ file.id }}/checkout" method="post">
+                                    <button type="submit" class="dropdown-item"
+                                        onclick="return confirm('Check out {{ file.filename }}?');"><i
+                                            class="fas fa-sign-out-alt me-2"></i>Check Out</button>
+                                </form>
+                            </li>
+                            {% endif %}
+                            {% if file.is_checked_out and file.checked_out_by_id == user.id %}
+                            <li><a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="modal"
+                                    data-bs-target="#checkInModal{{ file.id }}"><i
+                                        class="fas fa-sign-in-alt me-2"></i>Check In</a></li>
+                            <li>
+                                <form action="/projects/files/{{ file.id }}/cancel_checkout" method="post">
+                                    <button type="submit" class="dropdown-item"
+                                        onclick="return confirm('Cancel checkout?');"><i
+                                            class="fas fa-times-circle me-2"></i>Cancel Checkout</button>
+                                </form>
+                            </li>
+                            {% endif %}
+
+                            {% if not file.is_checked_out or file.checked_out_by_id == user.id %}
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li>
+                                <form action="/projects/files/{{ file.id }}/delete" method="post">
+                                    <button type="submit" class="dropdown-item text-danger"
+                                        onclick="return confirm('Delete {{ file.filename }} permanently?');"><i
+                                            class="fas fa-trash-alt me-2"></i>Delete</button>
+                                </form>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+
+                    <!-- Icon -->
+                    <div class="mt-2" ondblclick="window.location.href='/projects/files/{{ file.id }}/download'">
+                        {% if file.filename.lower().endswith('.docx') or file.filename.lower().endswith('.doc') %}
+                        <i class="fas fa-file-word explorer-icon-large file-icon-word"></i>
+                        {% elif file.filename.lower().endswith('.pdf') %}
+                        <i class="fas fa-file-pdf explorer-icon-large file-icon-pdf"></i>
+                        {% elif file.filename.lower().endswith('.indd') %}
+                        <i class="fas fa-file-image explorer-icon-large file-icon-indesign"></i>
+                        {% elif file.filename.lower().endswith('.xml') %}
+                        <i class="fas fa-file-code explorer-icon-large file-icon-xml"></i>
+                        {% else %}
+                        <i class="fas fa-file explorer-icon-large text-secondary"></i>
+                        {% endif %}
+                    </div>
+
+                    <!-- Filename -->
+                    <div class="explorer-item-name mt-1">{{ file.filename }}</div>
+
+                    <!-- Status Badge -->
+                    {% if file.is_checked_out %}
+                    {% if file.checked_out_by_id == user.id %}
+                    <span class="badge bg-warning text-dark rounded-pill mt-1" style="font-size: 0.6rem;">Checked
+                        Out</span>
+                    {% else %}
+                    <span class="badge bg-danger text-white rounded-pill mt-1" style="font-size: 0.6rem;">Locked</span>
+                    {% endif %}
+                    {% endif %}
+                </div>
+                {% endfor %}
+
+                {% if not files %}
+                <div class="w-100 text-center py-5 text-muted">
+                    <i class="far fa-folder-open fa-3x mb-3 opacity-25"></i>
+                    <p>No files in this folder.</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- List View -->
+            <table class="explorer-table d-none" id="listViewContainer">
+                <thead>
+                    <tr>
+                        <th width="40%">Name</th>
+                        <th width="15%">Date Modified</th>
+                        <th width="10%">Version</th>
+                        <th width="15%">Status</th>
+                        <th width="20%">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for file in files %}
+                    <tr>
+                        <td class="col-name" style="width: 40%;">
+                            {% if file.filename.lower().endswith('.docx') %}<i
+                                class="fas fa-file-word text-primary me-2"></i>
+                            {% elif file.filename.lower().endswith('.pdf') %}<i
+                                class="fas fa-file-pdf text-danger me-2"></i>
+                            {% else %}<i class="fas fa-file text-secondary me-2"></i>{% endif %}
+                            {{ file.filename }}
+                        </td>
+                        <td>{{ file.uploaded_at.strftime('%Y-%m-%d') }}</td>
+                        <td>v{{ file.version }}</td>
+                        <td>
+                            {% if file.is_checked_out %}
+                            {% if file.checked_out_by_id == user.id %}
+                            <span class="text-warning"><i class="fas fa-lock me-1"></i> You</span>
+                            {% else %}
+                            <span class="text-danger"><i class="fas fa-lock me-1"></i> {{ file.checked_out_by.username
+                                }}</span>
+                            {% endif %}
+                            {% else %}
+                            <span class="text-muted">Available</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="/projects/files/{{ file.id }}/download" class="btn btn-light"
+                                    title="Download"><i class="fas fa-download"></i></a>
+
+                                <!-- Same dropdown logic as grid view -->
+                                <button type="button" class="btn btn-light dropdown-toggle dropdown-toggle-split"
+                                    data-bs-toggle="dropdown"></button>
+                                <ul class="dropdown-menu dropdown-menu-end shadow">
+                                    {% if file.filename.lower().endswith('.docx') %}
+                                    <li class="dropdown-header small text-muted">PROCESSING</li>
+                                    {% if 'Editor' in user.roles or 'CopyEditor' in user.roles or 'Admin' in user.roles
+                                    %}
+                                    <li><a class="dropdown-item" href="javascript:void(0);" data-file-id="{{ file.id }}"
+                                            data-process-type="language" onclick="runProcess(event, this)">Language
+                                            Edit</a></li>
+                                    <li><a class="dropdown-item" href="javascript:void(0);" data-file-id="{{ file.id }}"
+                                            data-process-type="technical" onclick="runProcess(event, this)">Technical
+                                            Edit</a></li>
+                                    <li><a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="modal"
+                                            data-bs-target="#refCheckModal{{ file.id }}">Reference Check</a></li>
+                                    <li><a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="modal"
+                                            data-bs-target="#structuringModal{{ file.id }}">Structuring</a></li>
+                                    {% endif %}
+                                    {% if 'PPD' in user.roles or 'ProjectManager' in user.roles or 'Admin' in user.roles
+                                    %}
+                                    <li><a class="dropdown-item" href="javascript:void(0);" data-file-id="{{ file.id }}"
+                                            data-process-type="ppd" onclick="runProcess(event, this)">PPD Generation</a>
+                                    </li>
+                                    {% endif %}
+                                    {% if 'PermissionsManager' in user.roles or 'ProjectManager' in user.roles or
+                                    'Admin' in user.roles %}
+                                    <li><a class="dropdown-item" href="javascript:void(0);" data-file-id="{{ file.id }}"
+                                            data-process-type="permissions"
+                                            onclick="runProcess(event, this)">Permissions Check</a></li>
+                                    {% endif %}
+                                    <li>
+                                        <hr class="dropdown-divider">
+                                    </li>
+                                    {% endif %}
+
+                                    {% if not file.is_checked_out %}
+                                    <li>
+                                        <form action="/projects/files/{{ file.id }}/checkout" method="post"><button
+                                                type="submit" class="dropdown-item"
+                                                onclick="return confirm('Check out?');">Check Out</button></form>
+                                    </li>
+                                    {% endif %}
+                                    {% if file.is_checked_out and file.checked_out_by_id == user.id %}
+                                    <li><a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="modal"
+                                            data-bs-target="#checkInModal{{ file.id }}">Check In</a></li>
+                                    <li>
+                                        <form action="/projects/files/{{ file.id }}/cancel_checkout" method="post">
+                                            <button type="submit" class="dropdown-item">Cancel Checkout</button>
+                                        </form>
+                                    </li>
+                                    {% endif %}
+
+                                    {% if not file.is_checked_out or file.checked_out_by_id == user.id %}
+                                    <li>
+                                        <hr class="dropdown-divider">
+                                    </li>
+                                    <li>
+                                        <form action="/projects/files/{{ file.id }}/delete" method="post"><button
+                                                type="submit" class="dropdown-item text-danger"
+                                                onclick="return confirm('Delete?');">Delete</button></form>
+                                    </li>
+                                    {% endif %}
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Status Bar -->
+    <div class="explorer-status-bar">
+        <span>{{ files|length }} item(s)</span>
+        <span class="border-start ps-3 ms-2">Zone: Trusted</span>
+    </div>
+</div>
+
+<!-- Modals Section (Preserved & Cleaned Up) -->
+<!-- Upload Modal -->
+<div class="modal fade" id="uploadModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <form action="/projects/{{ project.id }}/chapter/{{ chapter.id }}/upload" method="post"
+            enctype="multipart/form-data">
+            <input type="hidden" name="category" value="{{ active_tab }}">
+            <div class="modal-content border-0 shadow-xl">
+                <div class="modal-header bg-light">
+                    <h5 class="modal-title"><i class="fas fa-cloud-upload-alt me-2"></i>Upload to {{ active_tab }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Select Files</label>
+                        <input type="file" name="files" class="form-control" multiple required id="uploadFileInput">
+                    </div>
+                    <div class="alert alert-light border d-none" id="filePreview">
+                        <strong>Selected:</strong>
+                        <ul id="fileList" class="mb-0 mt-2 small"></ul>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light border-0">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Upload</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% for file in files %}
+<!-- Reference Check Modal -->
+{% if file.filename.lower().endswith('.docx') %}
+<div class="modal fade" id="refCheckModal{{ file.id }}" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title text-primary fw-bold">Reference Check Options</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex flex-column gap-2">
+                    <label class="list-group-item d-flex gap-2"><input class="form-check-input me-1 ref-check-input"
+                            type="checkbox" value="reference_number_validation"> Number Validation</label>
+                    <label class="list-group-item d-flex gap-2"><input class="form-check-input me-1 ref-check-input"
+                            type="checkbox" value="reference_apa_chicago_validation"> Name & Year (APA/Chicago)</label>
+                    <label class="list-group-item d-flex gap-2"><input class="form-check-input me-1 ref-check-input"
+                            type="checkbox" value="reference_report_only"> Report Only</label>
+                    <label class="list-group-item d-flex gap-2"><input class="form-check-input me-1 ref-check-input"
+                            type="checkbox" value="reference_structuring"> Structuring (Post-Validation)</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary"
+                    onclick="runMultipleReferenceChecks('{{ file.id }}')">Run</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Structuring Modal -->
+<div class="modal fade" id="structuringModal{{ file.id }}" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title text-primary fw-bold">Structuring Options</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex flex-column gap-2">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="structMode{{ file.id }}" value="style"
+                            checked>
+                        <label class="form-check-label">Apply Styles & Validate</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="structMode{{ file.id }}" value="tag">
+                        <label class="form-check-label">Add Tags Only</label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="runStructuring('{{ file.id }}')">Run</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Check In Modal -->
+{% if file.is_checked_out and file.checked_out_by_id == user.id %}
+<div class="modal fade" id="checkInModal{{ file.id }}" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <form action="/projects/{{ project.id }}/chapter/{{ chapter.id }}/upload" method="post"
+            enctype="multipart/form-data">
+            <input type="hidden" name="category" value="{{ active_tab }}">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">Check In: {{ file.filename }}</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Upload version <strong>v{{ file.version + 1 }}</strong>.</p>
+                    <input type="file" name="files" class="form-control" required>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">Check In</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+{% endfor %}
+
+<script>
+    // View Toggle Logic
+    const viewBtn = document.getElementById('viewToggleBtn');
+    const gridView = document.getElementById('gridViewContainer');
+    const listView = document.getElementById('listViewContainer');
+    let isGrid = true;
+
+    if (viewBtn) {
+        viewBtn.addEventListener('click', () => {
+            isGrid = !isGrid;
+            if (isGrid) {
+                gridView.classList.remove('d-none');
+                listView.classList.add('d-none');
+                viewBtn.innerHTML = '<i class="fas fa-list me-1"></i> View';
+            } else {
+                gridView.classList.add('d-none');
+                listView.classList.remove('d-none');
+                viewBtn.innerHTML = '<i class="fas fa-th-large me-1"></i> View';
+            }
+        });
+    }
+
+    // File Preview Logic
+    document.getElementById('uploadFileInput')?.addEventListener('change', function (e) {
+        const files = Array.from(e.target.files);
+        const preview = document.getElementById('filePreview');
+        const fileList = document.getElementById('fileList');
+        if (files.length > 0) {
+            fileList.innerHTML = files.map(f => `<li>${f.name}</li>`).join('');
+            preview.classList.remove('d-none');
+        } else {
+            preview.classList.add('d-none');
+        }
+    });
+</script>
+
+<style>
+    /* Override base container styles */
+    .container,
+    .container-fluid {
+        max-width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    /* Windows Explorer Theme - Inlined */
+    .explorer-container {
+        display: flex;
+        flex-direction: column;
+        position: fixed;
+        top: 72px;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ffffff;
+        font-family: 'Segoe UI', sans-serif;
+        overflow: hidden;
+        z-index: 1000;
+        border-top: 1px solid #d9d9d9;
+    }
+
+    .explorer-toolbar {
+        background-color: #f9f9f9;
+        border-bottom: 1px solid #dadada;
+        padding: 6px 12px;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-shrink: 0;
+    }
+
+    .explorer-address-bar {
+        display: flex;
+        align-items: center;
+        background: white;
+        border: 1px solid #d9d9d9;
+        padding: 3px 10px;
+        flex-grow: 1;
+        margin: 0 10px;
+        height: 30px;
+        font-size: 0.9rem;
+        color: #333;
+    }
+
+    .explorer-body {
+        display: flex;
+        flex: 1;
+        overflow: hidden;
+        position: relative;
+        background-color: #fff;
+    }
+
+    .explorer-sidebar {
+        width: 260px;
+        background-color: #f0f0f0;
+        border-right: 1px solid #dadada;
+        overflow-y: auto;
+        padding: 10px 0;
+        flex-shrink: 0;
+    }
+
+    .explorer-main {
+        flex: 1;
+        background-color: white;
+        overflow-y: auto;
+        padding: 10px;
+        position: relative;
+    }
+
+    .nav-tree-item {
+        display: flex;
+        align-items: center;
+        padding: 4px 15px;
+        color: #333 !important;
+        text-decoration: none;
+        font-size: 0.9rem;
+        cursor: default;
+        user-select: none;
+    }
+
+    .nav-tree-item:hover {
+        background-color: #e5f3ff;
+        color: #000 !important;
+    }
+
+    .nav-tree-item.active {
+        background-color: #cce8ff;
+        border: 1px solid #99d1ff;
+        color: #000 !important;
+    }
+
+    .nav-tree-item i {
+        margin-right: 8px;
+        color: #e8c763;
+        width: 16px;
+        text-align: center;
+    }
+
+    .explorer-grid {
+        display: flex;
+        flex-wrap: wrap;
+        padding: 5px;
+        gap: 2px;
+        align-content: flex-start;
+    }
+
+    .explorer-grid-item {
+        width: 90px;
+        height: 100px;
+        padding: 5px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        text-align: center;
+        cursor: default;
+        border: 1px solid transparent;
+        margin-bottom: 5px;
+        border-radius: 2px;
+    }
+
+    .explorer-grid-item:hover {
+        background-color: #e5f3ff;
+        border: 1px solid #cce8ff;
+    }
+
+    .explorer-icon-large {
+        font-size: 42px;
+        margin-bottom: 4px;
+        color: #e8c763;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    }
+
+    .explorer-item-name {
+        font-size: 0.8rem;
+        line-height: 1.1;
+        word-break: break-word;
+        width: 100%;
+        color: #333;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+    }
+
+    .explorer-status-bar {
+        background-color: #f5f6f7;
+        border-top: 1px solid #dadada;
+        padding: 4px 12px;
+        font-size: 0.8rem;
+        color: #333;
+        display: flex;
+        gap: 20px;
+        flex-shrink: 0;
+    }
+
+    /* Table Styles */
+    .explorer-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9rem;
+        color: #333;
+        /* table-layout: fixed; Removed to allow auto-sizing */
+    }
+
+    .explorer-table thead th {
+        text-align: left;
+        padding: 4px 10px;
+        border-right: 1px solid #e0e0e0;
+        border-bottom: 1px solid #d9d9d9;
+        color: #555;
+        font-weight: normal;
+        background: #fff;
+        position: sticky;
+        top: 0;
+        cursor: default;
+        user-select: none;
+    }
+
+    .explorer-table tbody tr {
+        border-bottom: 1px solid transparent;
+        cursor: default;
+    }
+
+    .explorer-table tbody tr:hover {
+        background-color: #e5f3ff;
+    }
+
+    .explorer-table td {
+        padding: 4px 10px;
+        vertical-align: middle;
+        white-space: nowrap;
+        color: #333;
+        overflow: visible;
+        /* Important for dropdowns */
+    }
+
+    .explorer-table td.col-name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 300px;
+        display: block;
+        /* Required for max-width to work in some table layouts or use div wrapper */
+    }
+
+    /* Better approach for table cell truncation is max-width on td */
+
+    .file-icon-word {
+        color: #2b579a;
+    }
+
+    .file-icon-pdf {
+        color: #d32f2f;
+    }
+
+    .file-icon-indesign {
+        color: #d6006f;
+    }
+
+    .file-icon-xml {
+        color: #f57f17;
+    }
+
+    .dropdown-menu {
+        z-index: 9999;
+    }
+</style>
+{% endblock %}

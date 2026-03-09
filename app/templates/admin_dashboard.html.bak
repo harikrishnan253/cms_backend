@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - S4carlisle{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h2 class="mb-1">Admin Dashboard</h2>
+                <p class="text-muted mb-0">System overview and management</p>
+            </div>
+            <a href="/dashboard" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Back to User Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Stats Cards -->
+    <div class="col-md-3">
+        <div class="card h-100 border-0 shadow-sm text-center">
+            <div class="card-body">
+                <i class="fas fa-users mb-3 text-primary fa-2x"></i>
+                <h3 class="fw-bold">{{ admin_stats.total_users }}</h3>
+                <p class="text-muted mb-0 small fw-bold text-uppercase">Total Users</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card h-100 border-0 shadow-sm text-center">
+             <div class="card-body">
+                <i class="fas fa-file-alt mb-3 text-info fa-2x"></i>
+                <h3 class="fw-bold">{{ admin_stats.total_files }}</h3>
+                <p class="text-muted mb-0 small fw-bold text-uppercase">Total Files</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card h-100 border-0 shadow-sm text-center">
+             <div class="card-body">
+                <i class="fas fa-check-circle mb-3 text-success fa-2x"></i>
+                <h3 class="fw-bold">{{ admin_stats.total_validations if admin_stats.total_validations else 0 }}</h3>
+                <p class="text-muted mb-0 small fw-bold text-uppercase">Total Validations</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card h-100 border-0 shadow-sm text-center">
+             <div class="card-body">
+                <i class="fas fa-cogs mb-3 text-warning fa-2x"></i>
+                <h3 class="fw-bold">{{ admin_stats.total_macro if admin_stats.total_macro else 0 }}</h3>
+                <p class="text-muted mb-0 small fw-bold text-uppercase">Editing Processes</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

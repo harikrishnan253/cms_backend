@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en" class="h-full">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Publishing Production CMS{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            box-sizing: border-box;
+        }
+
+        * {
+            font-family: 'DM Sans', sans-serif;
+        }
+
+        .sidebar-item {
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .sidebar-item:hover {
+            background: linear-gradient(90deg, rgba(16, 185, 129, 0.1) 0%, transparent 100%);
+            color: #34d399;
+            /* emerald-400 */
+            transform: translateX(4px);
+        }
+
+        .sidebar-item.active {
+            background: linear-gradient(90deg, rgba(16, 185, 129, 0.2) 0%, transparent 100%);
+            border-left: 3px solid #10b981;
+            color: #10b981;
+            font-weight: 600;
+        }
+
+        /* Keep other animations if needed */
+        .modal-overlay {
+            animation: fadeIn 0.2s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .toast {
+            animation: slideIn 0.3s ease;
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+    </style>
+    <style>
+        @view-transition {
+            navigation: auto;
+        }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+
+<body class="h-full bg-slate-50 overflow-hidden">
+    <div id="app" class="h-full w-full flex">
+        <!-- Sidebar -->
+        <aside id="sidebar" class="w-64 bg-slate-900 text-white flex-shrink-0 flex flex-col h-full overflow-y-auto">
+            <div class="p-6 border-b border-slate-700 sticky top-0 bg-slate-900 z-10">
+                <div class="flex flex-col gap-3">
+                    <img src="/static/images/S4c.png" alt="S4Carlisle Logo" class="w-48 h-auto object-contain">
+                    <div>
+                        <h1 class="font-bold text-lg text-emerald-400">Pub CMS</h1>
+                        <p class="text-xs text-slate-400">Production Suite</p>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="flex-1 p-4 space-y-1">
+                <a href="/dashboard"
+                    class="sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left {% if request.url.path == '/dashboard' %}active{% endif %}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                    </svg>
+                    Dashboard
+                </a>
+
+                <a href="/projects"
+                    class="sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left {% if request.url.path == '/projects' %}active{% endif %}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Projects
+                </a>
+                <a href="#" class="sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
+                    </svg>
+                    Workflow
+                </a>
+                <a href="#" class="sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z" />
+                    </svg>
+                    Files
+                </a>
+                <a href="#" class="sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Quality Control
+                </a>
+                <a href="/reports" class="sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    Reports
+                </a>
+
+                {% if user and 'Admin' in user.roles %}
+                <div class="mt-2 text-xs text-slate-400 px-4">Admin</div>
+                <a href="/admin"
+                    class="sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left {% if request.url.path == '/admin' %}active{% endif %}">
+                    <i class="fas fa-shield-alt w-5"></i> Admin Dashboard
+                </a>
+                <a href="/admin/users"
+                    class="sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left {% if request.url.path.startswith('/admin/users') %}active{% endif %}">
+                    <i class="fas fa-users w-5"></i> Users
+                </a>
+                <a href="/admin/users/create"
+                    class="sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left {% if request.url.path == '/admin/users/create' %}active{% endif %}">
+                    <i class="fas fa-user-plus w-5"></i> Create User
+                </a>
+                <a href="/admin/users/{{ user.id }}/password"
+                    class="sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left {% if request.url.path == ('/admin/users/' ~ user.id ~ '/password') %}active{% endif %}">
+                    <i class="fas fa-key w-5"></i> Change Password
+                </a>
+                <a href="/admin/stats"
+                    class="sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left {% if request.url.path == '/admin/stats' %}active{% endif %}">
+                    <i class="fas fa-chart-bar w-5"></i> Stats
+                </a>
+                {% endif %}
+
+                <a href="/activities"
+                    class="sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left {% if request.url.path == '/activities' %}active{% endif %}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                    </svg>
+                    Activities
+                </a>
+
+                <a href="/logout"
+                    class="sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left mt-auto text-rose-300 hover:bg-rose-900/30">
+                    <i class="fas fa-sign-out-alt w-5 text-center"></i> Logout
+                </a>
+            </nav>
+
+            <div class="p-4 border-t border-slate-700 sticky bottom-0 bg-slate-900">
+                <div class="flex items-center gap-3 px-4 py-2">
+                    <div
+                        class="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center text-sm font-semibold text-white">
+                        {{ user.username[0] | upper if user else 'U' }}
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium">{{ user.username if user else 'User' }}</p>
+                        <p class="text-xs text-slate-400">{{ user.roles[0] if user and user.roles else 'Viewer' }}</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 flex flex-col min-h-0 bg-white relative overflow-hidden">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed bottom-6 right-6 z-50 space-y-3"></div>
+
+    <script>
+        // Toast Notifications
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+
+            const colors = {
+                success: 'bg-emerald-500',
+                error: 'bg-rose-500',
+                info: 'bg-blue-500'
+            };
+
+            toast.className = `toast ${colors[type]} text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-3`;
+            toast.innerHTML = `
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                ${type === 'success' ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>' :
+                    type === 'error' ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>' :
+                        '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>'}
+                </svg>
+                <span>${message}</span>
+            `;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                toast.style.transition = 'all 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+
+</html>

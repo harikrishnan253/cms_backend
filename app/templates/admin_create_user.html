@@ -1,0 +1,79 @@
+{% extends "base_tailwind.html" %}
+
+{% block title %}Create User - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="flex flex-col h-full p-8">
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h2 class="text-3xl font-bold text-slate-800">Create New User</h2>
+            <p class="text-slate-500 mt-1">Add a new user to the system</p>
+        </div>
+        <a href="/admin/users" class="px-4 py-2 bg-white border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 transition-colors shadow-sm flex items-center gap-2">
+            <i class="fas fa-arrow-left"></i> Back to Users
+        </a>
+    </div>
+
+    <div class="flex justify-center">
+        <div class="w-full max-w-2xl bg-white rounded-2xl shadow-xl border border-slate-100 p-8">
+            <form method="POST" action="/admin/users/create" class="space-y-6">
+                
+                <!-- Username -->
+                <div>
+                    <label for="username" class="block text-sm font-bold text-slate-600 uppercase mb-2">Username <span class="text-rose-500">*</span></label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-user text-slate-400"></i>
+                        </div>
+                        <input type="text" id="username" name="username" required placeholder="e.g. john_doe" class="block w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-slate-50">
+                    </div>
+                </div>
+
+                <!-- Email -->
+                <div>
+                    <label for="email" class="block text-sm font-bold text-slate-600 uppercase mb-2">Email <span class="text-rose-500">*</span></label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-envelope text-slate-400"></i>
+                        </div>
+                        <input type="email" id="email" name="email" required placeholder="e.g. john@example.com" class="block w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-slate-50">
+                    </div>
+                </div>
+
+                <!-- Password -->
+                <div>
+                    <label for="password" class="block text-sm font-bold text-slate-600 uppercase mb-2">Password <span class="text-rose-500">*</span></label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-lock text-slate-400"></i>
+                        </div>
+                        <input type="password" id="password" name="password" required placeholder="Min. 6 characters" class="block w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-slate-50">
+                    </div>
+                </div>
+
+                <!-- Role -->
+                <div>
+                    <label for="role_id" class="block text-sm font-bold text-slate-600 uppercase mb-2">Assign Role <span class="text-rose-500">*</span></label>
+                    <div class="relative">
+                        <select id="role_id" name="role_id" required class="block w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-slate-50 appearance-none">
+                            {% for role in roles %}
+                            <option value="{{ role.id }}">{{ role.name }} - {{ role.description }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none text-slate-500">
+                            <i class="fas fa-chevron-down text-xs"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit -->
+                <div class="pt-4">
+                    <button type="submit" class="w-full py-3 px-4 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold rounded-xl shadow-lg transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2">
+                        <i class="fas fa-user-plus"></i> Create User
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

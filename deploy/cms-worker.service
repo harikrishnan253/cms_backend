@@ -1,0 +1,14 @@
+[Unit]
+Description=Celery Worker for CMS
+After=network.target redis.service
+
+[Service]
+User=cms_user
+Group=www-data
+WorkingDirectory=/var/www/cms_backend
+Environment="PATH=/var/www/cms_backend/.venv/bin"
+EnvironmentFile=/var/www/cms_backend/.env
+ExecStart=/var/www/cms_backend/.venv/bin/celery -A app.core.celery_app worker --loglevel=info
+
+[Install]
+WantedBy=multi-user.target

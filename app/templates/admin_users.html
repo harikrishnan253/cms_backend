@@ -1,0 +1,118 @@
+{% extends "base_tailwind.html" %}
+
+{% block title %}User Management - Admin{% endblock %}
+
+{% block content %}
+<div class="flex flex-col h-full p-8">
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h2 class="text-3xl font-bold text-slate-800">User Management</h2>
+            <p class="text-slate-500 mt-1">Manage system users, roles, and permissions</p>
+        </div>
+        <div class="flex gap-3">
+            <a href="/admin" class="px-4 py-2 bg-white border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 transition-colors shadow-sm flex items-center gap-2">
+                <i class="fas fa-arrow-left"></i> Back
+            </a>
+            <a href="/admin/users/create" class="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm flex items-center gap-2">
+                <i class="fas fa-user-plus"></i> Create New User
+            </a>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+                <thead class="bg-slate-50 text-slate-500 font-bold uppercase text-xs border-b border-slate-200">
+                    <tr>
+                        <th class="px-6 py-4">User</th>
+                        <th class="px-6 py-4">Role</th>
+                        <th class="px-6 py-4">Status</th>
+                        <th class="px-6 py-4 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for u in users %}
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold shadow-sm">
+                                    {{ u.username[0]|upper }}
+                                </div>
+                                <div>
+                                    <div class="font-bold text-slate-800">{{ u.username }}</div>
+                                    <div class="text-xs text-slate-500">{{ u.email }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <div class="flex flex-wrap gap-1">
+                                    {% for role in u.roles %}
+                                    <span class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
+                                        {{ role.name }}
+                                    </span>
+                                    {% else %}
+                                    <span class="text-slate-400 italic">No roles</span>
+                                    {% endfor %}
+                                </div>
+                                {% set role_names = u.roles|map(attribute='name')|list %}
+                                <form action="/admin/users/{{ u.id }}/role" method="post" class="inline-flex items-center" onsubmit="return confirm('Change role for {{ u.username }}?');">
+                                    <select name="role_id" class="ml-3 text-sm px-2 py-1 border border-slate-200 rounded-md bg-white">
+                                        {% for r in all_roles %}
+                                        <option value="{{ r.id }}" {% if r.name in role_names %}selected{% endif %}>{{ r.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <button type="submit" class="ml-2 px-3 py-1 bg-emerald-600 text-white rounded-md text-sm">Save</button>
+                                </form>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            {% if u.is_active %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                                <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full me-1.5"></span> Active
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800">
+                                <span class="w-1.5 h-1.5 bg-slate-500 rounded-full me-1.5"></span> Inactive
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <div class="flex justify-end gap-2">
+                                <a href="/admin/users/{{ u.id }}/edit" class="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="/admin/users/{{ u.id }}/password" class="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors" title="Change Password">
+                                    <i class="fas fa-key"></i>
+                                </a>
+                                {% if u.username != user.username %} <!-- Prevent deleting self -->
+                                <form action="/admin/users/{{ u.id }}/delete" method="post" onsubmit="return confirm('Are you sure you want to delete this user?');" class="inline">
+                                    <button type="submit" class="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors" title="Delete">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% if request.query_params.get('msg') or error %}
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function(){
+        {% if request.query_params.get('msg') %}
+        showToast("{{ request.query_params.get('msg') | replace('+', ' ') }}", 'success');
+        {% endif %}
+        {% if error %}
+        showToast("{{ error }}", 'error');
+        {% endif %}
+    });
+</script>
+{% endblock %}
+{% endif %}
+{% endblock %}

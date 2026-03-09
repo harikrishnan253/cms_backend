@@ -1,0 +1,271 @@
+{% extends "base.html" %}
+
+{% block title %}Register - S4carlisle{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <!-- Animated Background Bubbles -->
+    <div class="bubbles">
+        <div class="bubble" style="left: 10%; width: 80px; height: 80px; animation-duration: 8s; animation-delay: 0s;">
+        </div>
+        <div class="bubble" style="left: 30%; width: 50px; height: 50px; animation-duration: 12s; animation-delay: 2s;">
+        </div>
+        <div class="bubble" style="left: 70%; width: 60px; height: 60px; animation-duration: 10s; animation-delay: 4s;">
+        </div>
+        <div class="bubble" style="left: 50%; width: 40px; height: 40px; animation-duration: 15s; animation-delay: 1s;">
+        </div>
+        <div class="bubble" style="left: 85%; width: 70px; height: 70px; animation-duration: 14s; animation-delay: 3s;">
+        </div>
+        <div class="bubble" style="left: 20%; width: 45px; height: 45px; animation-duration: 11s; animation-delay: 5s;">
+        </div>
+    </div>
+
+    <!-- Register Form -->
+    <div class="auth-form fade-in">
+        <div class="auth-form-content">
+            <!-- Logo/Brand -->
+            <div class="text-center mb-4">
+                <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3 shadow-lg"
+                    style="width: 80px; height: 80px; background: linear-gradient(135deg, #667eea, #764ba2);">
+                    <i class="fas fa-layer-group fa-2x text-white"></i>
+                </div>
+            </div>
+
+            <!-- Welcome Text -->
+            <h2 class="text-center mb-2">Join Team S4Carlisle! 🚀</h2>
+            <p class="text-muted text-center mb-4">Create your account to get started</p>
+
+            <!-- Error Alert -->
+            {% if error %}
+            <div class="alert alert-danger border-0 shadow-sm fade show" role="alert">
+                <i class="fas fa-exclamation-circle me-2"></i>{{ error }}
+            </div>
+            {% endif %}
+
+            <!-- Form -->
+            <form action="/register" method="post" onsubmit="return validateForm()">
+                <!-- Username -->
+                <div class="form-group text-start mb-3">
+                    <label class="form-label fw-bold">
+                        <i class="fas fa-user text-primary me-1"></i>Username
+                    </label>
+                    <div class="input-group shadow-sm">
+                        <span class="input-group-text bg-white border-end-0">
+                            <i class="fas fa-user text-muted"></i>
+                        </span>
+                        <input type="text" name="username" class="form-control form-control-lg border-start-0 ps-0"
+                            placeholder="Choose a username" required>
+                    </div>
+                </div>
+
+                <!-- Email -->
+                <div class="form-group text-start mb-3">
+                    <label class="form-label fw-bold">
+                        <i class="fas fa-envelope text-primary me-1"></i>Email
+                    </label>
+                    <div class="input-group shadow-sm">
+                        <span class="input-group-text bg-white border-end-0">
+                            <i class="fas fa-envelope text-muted"></i>
+                        </span>
+                        <input type="email" name="email" class="form-control form-control-lg border-start-0 ps-0"
+                            placeholder="name@example.com" required>
+                    </div>
+                </div>
+
+                <!-- Password -->
+                <div class="form-group text-start mb-3">
+                    <label class="form-label fw-bold">
+                        <i class="fas fa-lock text-primary me-1"></i>Password
+                    </label>
+                    <div class="input-group shadow-sm">
+                        <span class="input-group-text bg-white border-end-0">
+                            <i class="fas fa-lock text-muted"></i>
+                        </span>
+                        <input type="password" name="password" id="password"
+                            class="form-control form-control-lg border-start-0 ps-0" placeholder="Minimum 6 characters"
+                            required>
+                    </div>
+                </div>
+
+                <!-- Confirm Password -->
+                <div class="form-group text-start mb-4">
+                    <label class="form-label fw-bold">
+                        <i class="fas fa-check-circle text-primary me-1"></i>Confirm Password
+                    </label>
+                    <div class="input-group shadow-sm">
+                        <span class="input-group-text bg-white border-end-0">
+                            <i class="fas fa-lock text-muted"></i>
+                        </span>
+                        <input type="password" name="confirm_password" id="confirm_password"
+                            class="form-control form-control-lg border-start-0 ps-0" placeholder="Re-enter password"
+                            required>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" class="btn btn-rainbow w-100 mb-3 shadow-lg">
+                    <span class="d-flex align-items-center justify-content-center">
+                        Create Account
+                        <i class="fas fa-user-plus ms-2"></i>
+                    </span>
+                </button>
+            </form>
+
+            <!-- Login Link -->
+            <div class="text-center mt-4 pt-3 border-top">
+                <p class="small text-muted mb-0">
+                    Already have an account?
+                    <a href="/login" class="text-decoration-none fw-bold"
+                        style="background: linear-gradient(135deg, #667eea, #764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                        Sign In here
+                    </a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Decorative Elements -->
+    <div class="position-absolute bottom-0 start-0 p-3 text-white opacity-75 d-none d-md-block">
+        <small>
+            <i class="fas fa-shield-alt me-1"></i>
+            Secure Registration
+        </small>
+    </div>
+</div>
+
+<!-- Validation Script -->
+<script>
+    function validateForm() {
+        var password = document.getElementById("password").value;
+        var confirmPassword = document.getElementById("confirm_password").value;
+        if (password != confirmPassword) {
+            alert("Passwords do not match.");
+            return false;
+        }
+        if (password.length < 6) {
+            alert("Password must be at least 6 characters.");
+            return false;
+        }
+        return true;
+    }
+</script>
+
+<style>
+    /* Reuse Login Styles */
+    body {
+        overflow-y: auto;
+        /* Allow scroll for taller register form */
+    }
+
+    .main-content {
+        margin: 0 !important;
+        padding: 0 !important;
+        max-width: 100% !important;
+    }
+
+    .dashboard-footer {
+        display: none !important;
+    }
+
+    .auth-container {
+        position: relative;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem 1rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+    }
+
+    .bubbles {
+        position: fixed;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        top: 0;
+        left: 0;
+        pointer-events: none;
+    }
+
+    .bubble {
+        position: absolute;
+        bottom: -100px;
+        background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.1));
+        border-radius: 50%;
+        animation: rise 15s infinite ease-in;
+        box-shadow: 0 8px 32px rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(4px);
+    }
+
+    @keyframes rise {
+        to {
+            bottom: 110%;
+            transform: translateX(20px);
+        }
+    }
+
+    .auth-form {
+        background: rgba(255, 255, 255, 0.98);
+        backdrop-filter: blur(20px);
+        padding: 2rem;
+        border-radius: 1.5rem;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        width: 100%;
+        max-width: 450px;
+        border: 2px solid rgba(255, 255, 255, 0.8);
+        position: relative;
+        z-index: 10;
+        animation: slideUp 0.6s ease-out;
+    }
+
+    @media (min-width: 768px) {
+        .auth-form {
+            padding: 3rem;
+        }
+    }
+
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .btn-rainbow {
+        background: linear-gradient(135deg, #667eea, #764ba2, #f093fb);
+        background-size: 200% auto;
+        color: white;
+        border: none;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        padding: 0.875rem 2rem;
+        font-size: 1rem;
+        border-radius: 0.5rem;
+        transition: all 0.3s ease;
+    }
+
+    .btn-rainbow:hover {
+        background-position: right center;
+        transform: translateY(-2px);
+        box-shadow: 0 12px 30px rgba(102, 126, 234, 0.5);
+        color: white;
+    }
+
+    .form-control:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.25rem rgba(102, 126, 234, 0.25);
+    }
+
+    .form-control:focus+.input-group-text,
+    .input-group:focus-within .input-group-text {
+        border-color: #667eea;
+        color: #667eea;
+    }
+</style>
+{% endblock %}

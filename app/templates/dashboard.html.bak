@@ -1,0 +1,1275 @@
+<!doctype html>
+<html lang="en" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Publishing Production CMS</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- <script src="/_sdk/element_sdk.js"></script> -->
+  <!-- <script src="/_sdk/data_sdk.js"></script> -->
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+  <style>
+    body {
+      box-sizing: border-box;
+    }
+    * {
+      font-family: 'DM Sans', sans-serif;
+    }
+    .sidebar-item:hover {
+      background: rgba(255,255,255,0.1);
+    }
+    .sidebar-item.active {
+      background: rgba(255,255,255,0.15);
+      border-left: 3px solid #10b981;
+    }
+    .stage-card {
+      transition: all 0.2s ease;
+    }
+    .stage-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    }
+    .status-badge {
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+    .progress-fill {
+      transition: width 0.5s ease;
+    }
+    .kanban-column {
+      min-height: 200px;
+    }
+    .metric-card {
+      transition: transform 0.2s ease;
+    }
+    .metric-card:hover {
+      transform: scale(1.02);
+    }
+    .modal-overlay {
+      animation: fadeIn 0.2s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .toast {
+      animation: slideIn 0.3s ease;
+    }
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+  </style>
+  <style>@view-transition { navigation: auto; }</style>
+ </head>
+ <body class="h-full bg-slate-50 overflow-auto">
+  <div id="app" class="h-full w-full flex"><!-- Sidebar -->
+   <aside id="sidebar" class="w-64 bg-slate-900 text-white flex-shrink-0 flex flex-col">
+    <div class="p-6 border-b border-slate-700">
+     <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-lg bg-emerald-500 flex items-center justify-center">
+       <svg class="w-6 h-6" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+       </svg>
+      </div>
+      <div>
+       <h1 id="sidebar-title" class="font-bold text-lg">Pub CMS</h1>
+       <p id="company-name" class="text-xs text-slate-400">Production Suite</p>
+      </div>
+     </div>
+    </div>
+    <nav class="flex-1 p-4 space-y-1"><button onclick="showView('dashboard')" class="sidebar-item active w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left" data-view="dashboard">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+      </svg> Dashboard </button> <button onclick="showView('projects')" class="sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left" data-view="projects">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg> Projects </button> <button onclick="showView('workflow')" class="sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left" data-view="workflow">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
+      </svg> Workflow </button> <button onclick="showView('files')" class="sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left" data-view="files">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z" />
+      </svg> Files </button> <button onclick="showView('quality')" class="sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left" data-view="quality">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg> Quality Control </button> <button onclick="showView('reports')" class="sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left" data-view="reports">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+      </svg> Reports </button>
+    </nav>
+    <div class="p-4 border-t border-slate-700">
+     <div class="flex items-center gap-3 px-4 py-2">
+      <div class="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center text-sm font-semibold">
+       PE
+      </div>
+      <div>
+       <p class="text-sm font-medium">{{ user.username if user else 'Production Editor' }}</p>
+       <p class="text-xs text-slate-400">{{ user.roles[0] if user and user.roles else 'Admin Access' }}</p>
+      </div>
+     </div>
+    </div>
+   </aside><!-- Main Content -->
+   <main class="flex-1 overflow-auto"><!-- Dashboard View -->
+    <div id="view-dashboard" class="view-content p-8">
+     <div class="mb-8">
+      <h2 id="dashboard-heading" class="text-3xl font-bold text-slate-800">Dashboard</h2>
+      <p class="text-slate-500 mt-1">Publishing Production Overview</p>
+     </div><!-- Metrics Row -->
+     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div class="metric-card bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+       <div class="flex items-center justify-between mb-4">
+        <div class="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
+         <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+         </svg>
+        </div><span class="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">+12%</span>
+       </div>
+       <p class="text-3xl font-bold text-slate-800" id="total-projects">0</p>
+       <p class="text-slate-500 text-sm">Total Projects</p>
+      </div>
+      <div class="metric-card bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+       <div class="flex items-center justify-between mb-4">
+        <div class="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center">
+         <svg class="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+         </svg>
+        </div><span class="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">94%</span>
+       </div>
+       <p class="text-3xl font-bold text-slate-800" id="on-time-rate">94%</p>
+       <p class="text-slate-500 text-sm">On-Time Delivery</p>
+      </div>
+      <div class="metric-card bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+       <div class="flex items-center justify-between mb-4">
+        <div class="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center">
+         <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+         </svg>
+        </div><span class="text-xs font-medium text-amber-600 bg-amber-50 px-2 py-1 rounded-full">-2 days</span>
+       </div>
+       <p class="text-3xl font-bold text-slate-800">8.5</p>
+       <p class="text-slate-500 text-sm">Avg. Days to Complete</p>
+      </div>
+      <div class="metric-card bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+       <div class="flex items-center justify-between mb-4">
+        <div class="w-12 h-12 rounded-xl bg-rose-100 flex items-center justify-center">
+         <svg class="w-6 h-6 text-rose-600" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+         </svg>
+        </div><span class="text-xs font-medium text-rose-600 bg-rose-50 px-2 py-1 rounded-full" id="delayed-count">0</span>
+       </div>
+       <p class="text-3xl font-bold text-slate-800" id="delayed-projects">0</p>
+       <p class="text-slate-500 text-sm">Delayed Projects</p>
+      </div>
+     </div><!-- Workflow Overview -->
+     <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 mb-8">
+      <h3 class="text-lg font-semibold text-slate-800 mb-6">Production Workflow Pipeline</h3>
+      <div class="flex items-center justify-between overflow-x-auto pb-4">
+       <div class="flex items-center gap-2 min-w-max">
+        <div class="stage-card bg-slate-50 rounded-xl p-4 text-center min-w-[120px]">
+         <div class="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center mx-auto mb-2"><span class="text-lg">📥</span>
+         </div>
+         <p class="text-xs font-medium text-slate-600">Received</p>
+         <p class="text-lg font-bold text-slate-800" id="stage-received">0</p>
+        </div>
+        <svg class="w-6 h-6 text-slate-300 flex-shrink-0" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+        </svg>
+        <div class="stage-card bg-blue-50 rounded-xl p-4 text-center min-w-[120px]">
+         <div class="w-10 h-10 rounded-full bg-blue-200 flex items-center justify-center mx-auto mb-2"><span class="text-lg">✏️</span>
+         </div>
+         <p class="text-xs font-medium text-blue-600">Copyediting</p>
+         <p class="text-lg font-bold text-blue-800" id="stage-copyediting">0</p>
+        </div>
+        <svg class="w-6 h-6 text-slate-300 flex-shrink-0" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+        </svg>
+        <div class="stage-card bg-violet-50 rounded-xl p-4 text-center min-w-[120px]">
+         <div class="w-10 h-10 rounded-full bg-violet-200 flex items-center justify-center mx-auto mb-2"><span class="text-lg">🔤</span>
+         </div>
+         <p class="text-xs font-medium text-violet-600">Typesetting</p>
+         <p class="text-lg font-bold text-violet-800" id="stage-typesetting">0</p>
+        </div>
+        <svg class="w-6 h-6 text-slate-300 flex-shrink-0" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+        </svg>
+        <div class="stage-card bg-amber-50 rounded-xl p-4 text-center min-w-[120px]">
+         <div class="w-10 h-10 rounded-full bg-amber-200 flex items-center justify-center mx-auto mb-2"><span class="text-lg">📄</span>
+         </div>
+         <p class="text-xs font-medium text-amber-600">Proofing</p>
+         <p class="text-lg font-bold text-amber-800" id="stage-proofing">0</p>
+        </div>
+        <svg class="w-6 h-6 text-slate-300 flex-shrink-0" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+        </svg>
+        <div class="stage-card bg-teal-50 rounded-xl p-4 text-center min-w-[120px]">
+         <div class="w-10 h-10 rounded-full bg-teal-200 flex items-center justify-center mx-auto mb-2"><span class="text-lg">🔍</span>
+         </div>
+         <p class="text-xs font-medium text-teal-600">Final QC</p>
+         <p class="text-lg font-bold text-teal-800" id="stage-qc">0</p>
+        </div>
+        <svg class="w-6 h-6 text-slate-300 flex-shrink-0" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+        </svg>
+        <div class="stage-card bg-emerald-50 rounded-xl p-4 text-center min-w-[120px]">
+         <div class="w-10 h-10 rounded-full bg-emerald-200 flex items-center justify-center mx-auto mb-2"><span class="text-lg">✅</span>
+         </div>
+         <p class="text-xs font-medium text-emerald-600">Completed</p>
+         <p class="text-lg font-bold text-emerald-800" id="stage-completed">0</p>
+        </div>
+       </div>
+      </div>
+     </div><!-- Responsibility Matrix -->
+     <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+      <h3 class="text-lg font-semibold text-slate-800 mb-6">Role-Based Responsibility Matrix</h3>
+      <div class="overflow-x-auto">
+       <table class="w-full">
+        <thead>
+         <tr class="border-b border-slate-100">
+          <th class="text-left py-3 px-4 text-sm font-semibold text-slate-600">Stage</th>
+          <th class="text-left py-3 px-4 text-sm font-semibold text-slate-600">Responsible</th>
+          <th class="text-left py-3 px-4 text-sm font-semibold text-slate-600">SLA</th>
+          <th class="text-left py-3 px-4 text-sm font-semibold text-slate-600">Status</th>
+         </tr>
+        </thead>
+        <tbody>
+         <tr class="border-b border-slate-50 hover:bg-slate-50">
+          <td class="py-3 px-4">
+           <div class="flex items-center gap-2"><span class="text-lg">✏️</span> <span class="font-medium text-slate-700">Copyediting</span>
+           </div></td>
+          <td class="py-3 px-4">
+           <div class="flex items-center gap-2">
+            <div class="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-xs">
+             👤
+            </div><span class="text-slate-600">CE Vendor</span>
+           </div></td>
+          <td class="py-3 px-4 text-slate-600">3 days</td>
+          <td class="py-3 px-4"><span class="px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">Active</span></td>
+         </tr>
+         <tr class="border-b border-slate-50 hover:bg-slate-50">
+          <td class="py-3 px-4">
+           <div class="flex items-center gap-2"><span class="text-lg">🔤</span> <span class="font-medium text-slate-700">Typesetting</span>
+           </div></td>
+          <td class="py-3 px-4">
+           <div class="flex items-center gap-2">
+            <div class="w-6 h-6 rounded-full bg-violet-100 flex items-center justify-center text-xs">
+             👥
+            </div><span class="text-slate-600">Composition Team</span>
+           </div></td>
+          <td class="py-3 px-4 text-slate-600">2 days</td>
+          <td class="py-3 px-4"><span class="px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">Active</span></td>
+         </tr>
+         <tr class="border-b border-slate-50 hover:bg-slate-50">
+          <td class="py-3 px-4">
+           <div class="flex items-center gap-2"><span class="text-lg">📄</span> <span class="font-medium text-slate-700">Proof Review</span>
+           </div></td>
+          <td class="py-3 px-4">
+           <div class="flex items-center gap-2">
+            <div class="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center text-xs">
+             ✍️
+            </div><span class="text-slate-600">Author</span>
+           </div></td>
+          <td class="py-3 px-4 text-slate-600">5 days</td>
+          <td class="py-3 px-4"><span class="px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700">Pending</span></td>
+         </tr>
+         <tr class="border-b border-slate-50 hover:bg-slate-50">
+          <td class="py-3 px-4">
+           <div class="flex items-center gap-2"><span class="text-lg">🔍</span> <span class="font-medium text-slate-700">Quality Control</span>
+           </div></td>
+          <td class="py-3 px-4">
+           <div class="flex items-center gap-2">
+            <div class="w-6 h-6 rounded-full bg-teal-100 flex items-center justify-center text-xs">
+             👤
+            </div><span class="text-slate-600">Production Editor</span>
+           </div></td>
+          <td class="py-3 px-4 text-slate-600">1 day</td>
+          <td class="py-3 px-4"><span class="px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">Active</span></td>
+         </tr>
+         <tr class="hover:bg-slate-50">
+          <td class="py-3 px-4">
+           <div class="flex items-center gap-2"><span class="text-lg">📦</span> <span class="font-medium text-slate-700">Delivery</span>
+           </div></td>
+          <td class="py-3 px-4">
+           <div class="flex items-center gap-2">
+            <div class="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center text-xs">
+             👤
+            </div><span class="text-slate-600">Project Manager</span>
+           </div></td>
+          <td class="py-3 px-4 text-slate-600">1 day</td>
+          <td class="py-3 px-4"><span class="px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">Active</span></td>
+         </tr>
+        </tbody>
+       </table>
+      </div>
+     </div>
+    </div><!-- Projects View -->
+    <div id="view-projects" class="view-content hidden p-8">
+     <div class="flex items-center justify-between mb-8">
+      <div>
+       <h2 class="text-3xl font-bold text-slate-800">Projects</h2>
+       <p class="text-slate-500 mt-1">Manage manuscript assignments</p>
+      </div><button onclick="openProjectModal()" class="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl font-medium transition-colors">
+       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+       </svg> New Project </button>
+     </div><!-- Filter Bar -->
+     <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-100 mb-6 flex flex-wrap gap-4 items-center">
+      <div class="flex items-center gap-2"><label for="filter-status" class="text-sm text-slate-600">Status:</label> <select id="filter-status" onchange="filterProjects()" class="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"> <option value="all">All</option> <option value="Not Started">Not Started</option> <option value="In Progress">In Progress</option> <option value="On Hold">On Hold</option> <option value="With Author">With Author</option> <option value="Completed">Completed</option> <option value="Delayed">Delayed</option> </select>
+      </div>
+      <div class="flex items-center gap-2"><label for="filter-client" class="text-sm text-slate-600">Client:</label> <select id="filter-client" onchange="filterProjects()" class="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"> <option value="all">All Clients</option> <option value="Springer">Springer</option> <option value="Elsevier">Elsevier</option> <option value="Wiley">Wiley</option> <option value="Taylor &amp; Francis">Taylor &amp; Francis</option> </select>
+      </div>
+      <div class="flex-1"></div>
+      <div class="relative">
+       <svg class="w-5 h-5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+       </svg><input type="text" id="search-projects" oninput="filterProjects()" placeholder="Search projects..." class="pl-10 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 w-64">
+      </div>
+     </div><!-- Projects Table -->
+     <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+      <div class="overflow-x-auto">
+       <table class="w-full">
+        <thead class="bg-slate-50">
+         <tr>
+          <th class="text-left py-4 px-6 text-sm font-semibold text-slate-600">Project</th>
+          <th class="text-left py-4 px-6 text-sm font-semibold text-slate-600">Client</th>
+          <th class="text-left py-4 px-6 text-sm font-semibold text-slate-600">Type</th>
+          <th class="text-left py-4 px-6 text-sm font-semibold text-slate-600">Stage</th>
+          <th class="text-left py-4 px-6 text-sm font-semibold text-slate-600">Status</th>
+          <th class="text-left py-4 px-6 text-sm font-semibold text-slate-600">Due Date</th>
+          <th class="text-left py-4 px-6 text-sm font-semibold text-slate-600">Actions</th>
+         </tr>
+        </thead>
+        <tbody id="projects-table-body">
+         <tr>
+          <td colspan="7" class="py-12 text-center text-slate-500">
+           <div class="flex flex-col items-center">
+            <svg class="w-12 h-12 text-slate-300 mb-3" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <p class="font-medium">No projects yet</p>
+            <p class="text-sm">Click "New Project" to add your first assignment</p>
+           </div></td>
+         </tr>
+        </tbody>
+       </table>
+      </div>
+     </div>
+    </div><!-- Workflow View -->
+    <div id="view-workflow" class="view-content hidden p-8">
+     <div class="mb-8">
+      <h2 class="text-3xl font-bold text-slate-800">Workflow Board</h2>
+      <p class="text-slate-500 mt-1">Kanban view of production stages</p>
+     </div>
+     <div class="flex gap-4 overflow-x-auto pb-4" id="kanban-board"><!-- Received -->
+      <div class="kanban-column flex-shrink-0 w-72 bg-slate-100 rounded-xl p-4">
+       <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2"><span class="text-lg">📥</span>
+         <h3 class="font-semibold text-slate-700">Received</h3>
+        </div><span class="bg-slate-200 text-slate-600 text-xs font-medium px-2 py-1 rounded-full" id="kanban-received-count">0</span>
+       </div>
+       <div id="kanban-received" class="space-y-3 min-h-[150px]"></div>
+      </div><!-- Copyediting -->
+      <div class="kanban-column flex-shrink-0 w-72 bg-blue-50 rounded-xl p-4">
+       <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2"><span class="text-lg">✏️</span>
+         <h3 class="font-semibold text-blue-700">Copyediting</h3>
+        </div><span class="bg-blue-200 text-blue-700 text-xs font-medium px-2 py-1 rounded-full" id="kanban-copyediting-count">0</span>
+       </div>
+       <div id="kanban-copyediting" class="space-y-3 min-h-[150px]"></div>
+      </div><!-- Typesetting -->
+      <div class="kanban-column flex-shrink-0 w-72 bg-violet-50 rounded-xl p-4">
+       <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2"><span class="text-lg">🔤</span>
+         <h3 class="font-semibold text-violet-700">Typesetting</h3>
+        </div><span class="bg-violet-200 text-violet-700 text-xs font-medium px-2 py-1 rounded-full" id="kanban-typesetting-count">0</span>
+       </div>
+       <div id="kanban-typesetting" class="space-y-3 min-h-[150px]"></div>
+      </div><!-- Proofing -->
+      <div class="kanban-column flex-shrink-0 w-72 bg-amber-50 rounded-xl p-4">
+       <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2"><span class="text-lg">📄</span>
+         <h3 class="font-semibold text-amber-700">Proofing</h3>
+        </div><span class="bg-amber-200 text-amber-700 text-xs font-medium px-2 py-1 rounded-full" id="kanban-proofing-count">0</span>
+       </div>
+       <div id="kanban-proofing" class="space-y-3 min-h-[150px]"></div>
+      </div><!-- Final QC -->
+      <div class="kanban-column flex-shrink-0 w-72 bg-teal-50 rounded-xl p-4">
+       <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2"><span class="text-lg">🔍</span>
+         <h3 class="font-semibold text-teal-700">Final QC</h3>
+        </div><span class="bg-teal-200 text-teal-700 text-xs font-medium px-2 py-1 rounded-full" id="kanban-qc-count">0</span>
+       </div>
+       <div id="kanban-qc" class="space-y-3 min-h-[150px]"></div>
+      </div><!-- Completed -->
+      <div class="kanban-column flex-shrink-0 w-72 bg-emerald-50 rounded-xl p-4">
+       <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2"><span class="text-lg">✅</span>
+         <h3 class="font-semibold text-emerald-700">Completed</h3>
+        </div><span class="bg-emerald-200 text-emerald-700 text-xs font-medium px-2 py-1 rounded-full" id="kanban-completed-count">0</span>
+       </div>
+       <div id="kanban-completed" class="space-y-3 min-h-[150px]"></div>
+      </div>
+     </div>
+    </div><!-- Files View -->
+    <div id="view-files" class="view-content hidden p-8">
+     <div class="mb-8">
+      <h2 class="text-3xl font-bold text-slate-800">File Management</h2>
+      <p class="text-slate-500 mt-1">Version control &amp; file tracking</p>
+     </div>
+     <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+      <div class="p-6 border-b border-slate-100">
+       <div class="flex items-center gap-4">
+        <div class="relative flex-1">
+         <svg class="w-5 h-5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+         </svg><input type="text" placeholder="Search files..." class="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+        </div>
+       </div>
+      </div>
+      <div class="overflow-x-auto">
+       <table class="w-full">
+        <thead class="bg-slate-50">
+         <tr>
+          <th class="text-left py-4 px-6 text-sm font-semibold text-slate-600">File Name</th>
+          <th class="text-left py-4 px-6 text-sm font-semibold text-slate-600">Project</th>
+          <th class="text-left py-4 px-6 text-sm font-semibold text-slate-600">Version</th>
+          <th class="text-left py-4 px-6 text-sm font-semibold text-slate-600">Format</th>
+          <th class="text-left py-4 px-6 text-sm font-semibold text-slate-600">Upload Date</th>
+          <th class="text-left py-4 px-6 text-sm font-semibold text-slate-600">Owner</th>
+         </tr>
+        </thead>
+        <tbody id="files-table-body">
+         <tr class="border-b border-slate-50 hover:bg-slate-50">
+          <td class="py-4 px-6">
+           <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center"><span class="text-blue-600 font-semibold text-xs">DOC</span>
+            </div><span class="font-medium text-slate-700">manuscript_v2.docx</span>
+           </div></td>
+          <td class="py-4 px-6 text-slate-600">PUB-2024-001</td>
+          <td class="py-4 px-6"><span class="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">v2.0</span></td>
+          <td class="py-4 px-6 text-slate-600">DOCX</td>
+          <td class="py-4 px-6 text-slate-600">Jan 15, 2024</td>
+          <td class="py-4 px-6">
+           <div class="flex items-center gap-2">
+            <div class="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center text-xs">
+             CE
+            </div><span class="text-slate-600">CE Vendor</span>
+           </div></td>
+         </tr>
+         <tr class="border-b border-slate-50 hover:bg-slate-50">
+          <td class="py-4 px-6">
+           <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center"><span class="text-orange-600 font-semibold text-xs">XML</span>
+            </div><span class="font-medium text-slate-700">article_final.xml</span>
+           </div></td>
+          <td class="py-4 px-6 text-slate-600">PUB-2024-002</td>
+          <td class="py-4 px-6"><span class="px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">Final</span></td>
+          <td class="py-4 px-6 text-slate-600">XML</td>
+          <td class="py-4 px-6 text-slate-600">Jan 14, 2024</td>
+          <td class="py-4 px-6">
+           <div class="flex items-center gap-2">
+            <div class="w-6 h-6 rounded-full bg-violet-100 flex items-center justify-center text-xs">
+             TS
+            </div><span class="text-slate-600">Typesetter</span>
+           </div></td>
+         </tr>
+         <tr class="hover:bg-slate-50">
+          <td class="py-4 px-6">
+           <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-rose-100 flex items-center justify-center"><span class="text-rose-600 font-semibold text-xs">PDF</span>
+            </div><span class="font-medium text-slate-700">proof_v1.pdf</span>
+           </div></td>
+          <td class="py-4 px-6 text-slate-600">PUB-2024-003</td>
+          <td class="py-4 px-6"><span class="px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700">v1.0</span></td>
+          <td class="py-4 px-6 text-slate-600">PDF</td>
+          <td class="py-4 px-6 text-slate-600">Jan 13, 2024</td>
+          <td class="py-4 px-6">
+           <div class="flex items-center gap-2">
+            <div class="w-6 h-6 rounded-full bg-teal-100 flex items-center justify-center text-xs">
+             PE
+            </div><span class="text-slate-600">Prod. Editor</span>
+           </div></td>
+         </tr>
+        </tbody>
+       </table>
+      </div>
+     </div>
+    </div><!-- Quality Control View -->
+    <div id="view-quality" class="view-content hidden p-8">
+     <div class="mb-8">
+      <h2 class="text-3xl font-bold text-slate-800">Quality Control</h2>
+      <p class="text-slate-500 mt-1">QC checkpoints &amp; compliance tracking</p>
+     </div>
+     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6"><!-- QC Checklist -->
+      <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+       <h3 class="text-lg font-semibold text-slate-800 mb-6">Standard QC Checklist</h3>
+       <div class="space-y-4">
+        <div class="flex items-center justify-between p-4 bg-emerald-50 rounded-xl">
+         <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center">
+           <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+           </svg>
+          </div>
+          <div>
+           <p class="font-medium text-slate-700">Style Guide Compliance</p>
+           <p class="text-sm text-slate-500">Verified against client specs</p>
+          </div>
+         </div><span class="text-emerald-600 font-semibold">Pass</span>
+        </div>
+        <div class="flex items-center justify-between p-4 bg-emerald-50 rounded-xl">
+         <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center">
+           <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+           </svg>
+          </div>
+          <div>
+           <p class="font-medium text-slate-700">Reference Validation</p>
+           <p class="text-sm text-slate-500">All citations verified</p>
+          </div>
+         </div><span class="text-emerald-600 font-semibold">Pass</span>
+        </div>
+        <div class="flex items-center justify-between p-4 bg-amber-50 rounded-xl">
+         <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center">
+           <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+           </svg>
+          </div>
+          <div>
+           <p class="font-medium text-slate-700">XML Well-Formed Check</p>
+           <p class="text-sm text-slate-500">Minor issues detected</p>
+          </div>
+         </div><span class="text-amber-600 font-semibold">Warning</span>
+        </div>
+        <div class="flex items-center justify-between p-4 bg-emerald-50 rounded-xl">
+         <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center">
+           <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+           </svg>
+          </div>
+          <div>
+           <p class="font-medium text-slate-700">Artwork Resolution</p>
+           <p class="text-sm text-slate-500">All images ≥300 DPI</p>
+          </div>
+         </div><span class="text-emerald-600 font-semibold">Pass</span>
+        </div>
+        <div class="flex items-center justify-between p-4 bg-emerald-50 rounded-xl">
+         <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center">
+           <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+           </svg>
+          </div>
+          <div>
+           <p class="font-medium text-slate-700">Accessibility Tagging</p>
+           <p class="text-sm text-slate-500">WCAG 2.1 compliant</p>
+          </div>
+         </div><span class="text-emerald-600 font-semibold">Pass</span>
+        </div>
+       </div>
+      </div><!-- QC Metrics -->
+      <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+       <h3 class="text-lg font-semibold text-slate-800 mb-6">QC Performance Metrics</h3>
+       <div class="space-y-6">
+        <div>
+         <div class="flex items-center justify-between mb-2"><span class="text-sm font-medium text-slate-600">First Pass Rate</span> <span class="text-sm font-semibold text-emerald-600">87%</span>
+         </div>
+         <div class="w-full bg-slate-200 rounded-full h-3">
+          <div class="progress-fill bg-emerald-500 h-3 rounded-full" style="width: 87%"></div>
+         </div>
+        </div>
+        <div>
+         <div class="flex items-center justify-between mb-2"><span class="text-sm font-medium text-slate-600">Author Query Resolution</span> <span class="text-sm font-semibold text-blue-600">92%</span>
+         </div>
+         <div class="w-full bg-slate-200 rounded-full h-3">
+          <div class="progress-fill bg-blue-500 h-3 rounded-full" style="width: 92%"></div>
+         </div>
+        </div>
+        <div>
+         <div class="flex items-center justify-between mb-2"><span class="text-sm font-medium text-slate-600">Style Compliance</span> <span class="text-sm font-semibold text-violet-600">95%</span>
+         </div>
+         <div class="w-full bg-slate-200 rounded-full h-3">
+          <div class="progress-fill bg-violet-500 h-3 rounded-full" style="width: 95%"></div>
+         </div>
+        </div>
+        <div>
+         <div class="flex items-center justify-between mb-2"><span class="text-sm font-medium text-slate-600">XML Validation</span> <span class="text-sm font-semibold text-amber-600">78%</span>
+         </div>
+         <div class="w-full bg-slate-200 rounded-full h-3">
+          <div class="progress-fill bg-amber-500 h-3 rounded-full" style="width: 78%"></div>
+         </div>
+        </div>
+        <div>
+         <div class="flex items-center justify-between mb-2"><span class="text-sm font-medium text-slate-600">Rework Rate</span> <span class="text-sm font-semibold text-rose-600">12%</span>
+         </div>
+         <div class="w-full bg-slate-200 rounded-full h-3">
+          <div class="progress-fill bg-rose-500 h-3 rounded-full" style="width: 12%"></div>
+         </div>
+        </div>
+       </div>
+      </div>
+     </div>
+    </div><!-- Reports View -->
+    <div id="view-reports" class="view-content hidden p-8">
+     <div class="mb-8">
+      <h2 class="text-3xl font-bold text-slate-800">Reports &amp; Metrics</h2>
+      <p class="text-slate-500 mt-1">Production performance analytics</p>
+     </div>
+     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8"><!-- On-Time Delivery Chart -->
+      <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+       <h3 class="text-lg font-semibold text-slate-800 mb-6">On-Time Delivery Rate</h3>
+       <div class="flex items-center justify-center">
+        <div class="relative w-48 h-48">
+         <svg class="w-48 h-48 transform -rotate-90" viewbox="0 0 100 100"><circle cx="50" cy="50" r="40" stroke="#e2e8f0" stroke-width="12" fill="none" /> <circle cx="50" cy="50" r="40" stroke="#10b981" stroke-width="12" fill="none" stroke-dasharray="251.2" stroke-dashoffset="15" stroke-linecap="round" />
+         </svg>
+         <div class="absolute inset-0 flex items-center justify-center flex-col"><span class="text-4xl font-bold text-slate-800">94%</span> <span class="text-sm text-slate-500">On-Time</span>
+         </div>
+        </div>
+       </div>
+       <div class="mt-6 grid grid-cols-3 gap-4 text-center">
+        <div>
+         <p class="text-2xl font-bold text-emerald-600">156</p>
+         <p class="text-xs text-slate-500">On Time</p>
+        </div>
+        <div>
+         <p class="text-2xl font-bold text-amber-600">8</p>
+         <p class="text-xs text-slate-500">At Risk</p>
+        </div>
+        <div>
+         <p class="text-2xl font-bold text-rose-600">2</p>
+         <p class="text-xs text-slate-500">Delayed</p>
+        </div>
+       </div>
+      </div><!-- Turnaround Time -->
+      <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+       <h3 class="text-lg font-semibold text-slate-800 mb-6">Average Turnaround by Stage</h3>
+       <div class="space-y-4">
+        <div class="flex items-center gap-4"><span class="w-28 text-sm text-slate-600">Copyediting</span>
+         <div class="flex-1 bg-slate-100 rounded-full h-8 overflow-hidden">
+          <div class="bg-blue-500 h-8 rounded-full flex items-center justify-end pr-3" style="width: 60%"><span class="text-white text-xs font-medium">2.4 days</span>
+          </div>
+         </div>
+        </div>
+        <div class="flex items-center gap-4"><span class="w-28 text-sm text-slate-600">Typesetting</span>
+         <div class="flex-1 bg-slate-100 rounded-full h-8 overflow-hidden">
+          <div class="bg-violet-500 h-8 rounded-full flex items-center justify-end pr-3" style="width: 45%"><span class="text-white text-xs font-medium">1.8 days</span>
+          </div>
+         </div>
+        </div>
+        <div class="flex items-center gap-4"><span class="w-28 text-sm text-slate-600">Proofing</span>
+         <div class="flex-1 bg-slate-100 rounded-full h-8 overflow-hidden">
+          <div class="bg-amber-500 h-8 rounded-full flex items-center justify-end pr-3" style="width: 80%"><span class="text-white text-xs font-medium">3.2 days</span>
+          </div>
+         </div>
+        </div>
+        <div class="flex items-center gap-4"><span class="w-28 text-sm text-slate-600">Final QC</span>
+         <div class="flex-1 bg-slate-100 rounded-full h-8 overflow-hidden">
+          <div class="bg-teal-500 h-8 rounded-full flex items-center justify-end pr-3" style="width: 25%"><span class="text-white text-xs font-medium">1.0 day</span>
+          </div>
+         </div>
+        </div>
+       </div>
+      </div>
+     </div><!-- Vendor Performance -->
+     <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+      <h3 class="text-lg font-semibold text-slate-800 mb-6">Vendor Performance Scorecard</h3>
+      <div class="overflow-x-auto">
+       <table class="w-full">
+        <thead>
+         <tr class="border-b border-slate-100">
+          <th class="text-left py-3 px-4 text-sm font-semibold text-slate-600">Vendor</th>
+          <th class="text-left py-3 px-4 text-sm font-semibold text-slate-600">Projects</th>
+          <th class="text-left py-3 px-4 text-sm font-semibold text-slate-600">On-Time %</th>
+          <th class="text-left py-3 px-4 text-sm font-semibold text-slate-600">Quality Score</th>
+          <th class="text-left py-3 px-4 text-sm font-semibold text-slate-600">Rework Rate</th>
+          <th class="text-left py-3 px-4 text-sm font-semibold text-slate-600">Overall</th>
+         </tr>
+        </thead>
+        <tbody>
+         <tr class="border-b border-slate-50 hover:bg-slate-50">
+          <td class="py-3 px-4 font-medium text-slate-700">CE Vendor Alpha</td>
+          <td class="py-3 px-4 text-slate-600">45</td>
+          <td class="py-3 px-4"><span class="text-emerald-600 font-semibold">96%</span></td>
+          <td class="py-3 px-4">
+           <div class="flex items-center gap-1"><span class="text-amber-500">★★★★★</span>
+           </div></td>
+          <td class="py-3 px-4 text-slate-600">4%</td>
+          <td class="py-3 px-4"><span class="px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">Excellent</span></td>
+         </tr>
+         <tr class="border-b border-slate-50 hover:bg-slate-50">
+          <td class="py-3 px-4 font-medium text-slate-700">Typeset Pro</td>
+          <td class="py-3 px-4 text-slate-600">38</td>
+          <td class="py-3 px-4"><span class="text-emerald-600 font-semibold">92%</span></td>
+          <td class="py-3 px-4">
+           <div class="flex items-center gap-1"><span class="text-amber-500">★★★★☆</span>
+           </div></td>
+          <td class="py-3 px-4 text-slate-600">8%</td>
+          <td class="py-3 px-4"><span class="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">Good</span></td>
+         </tr>
+         <tr class="hover:bg-slate-50">
+          <td class="py-3 px-4 font-medium text-slate-700">XML Solutions</td>
+          <td class="py-3 px-4 text-slate-600">52</td>
+          <td class="py-3 px-4"><span class="text-amber-600 font-semibold">85%</span></td>
+          <td class="py-3 px-4">
+           <div class="flex items-center gap-1"><span class="text-amber-500">★★★☆☆</span>
+           </div></td>
+          <td class="py-3 px-4 text-slate-600">15%</td>
+          <td class="py-3 px-4"><span class="px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700">Average</span></td>
+         </tr>
+        </tbody>
+       </table>
+      </div>
+     </div>
+    </div>
+   </main>
+  </div><!-- Project Modal -->
+  <div id="project-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden modal-overlay">
+   <div class="bg-white rounded-2xl w-full max-w-2xl max-h-[90%] overflow-auto m-4">
+    <div class="p-6 border-b border-slate-100 flex items-center justify-between">
+     <h3 id="modal-title" class="text-xl font-semibold text-slate-800">New Project</h3><button onclick="closeProjectModal()" class="w-8 h-8 rounded-lg hover:bg-slate-100 flex items-center justify-center">
+      <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+      </svg></button>
+    </div>
+    <form id="project-form" onsubmit="handleProjectSubmit(event)" class="p-6 space-y-6"><input type="hidden" id="edit-project-id">
+     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div><label for="project-id" class="block text-sm font-medium text-slate-700 mb-2">Project ID</label> <input type="text" id="project-id" required placeholder="PUB-2024-XXX" class="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500">
+      </div>
+      <div><label for="isbn" class="block text-sm font-medium text-slate-700 mb-2">ISBN / DOI</label> <input type="text" id="isbn" placeholder="978-X-XXX-XXXXX-X" class="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500">
+      </div>
+     </div>
+     <div><label for="title" class="block text-sm font-medium text-slate-700 mb-2">Title</label> <input type="text" id="title" required placeholder="Manuscript title" class="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500">
+     </div>
+     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div><label for="client" class="block text-sm font-medium text-slate-700 mb-2">Client</label> <select id="client" required class="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"> <option value="">Select client</option> <option value="Springer">Springer</option> <option value="Elsevier">Elsevier</option> <option value="Wiley">Wiley</option> <option value="Taylor &amp; Francis">Taylor &amp; Francis</option> </select>
+      </div>
+      <div><label for="manuscript-type" class="block text-sm font-medium text-slate-700 mb-2">Manuscript Type</label> <select id="manuscript-type" required class="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"> <option value="">Select type</option> <option value="Book">Book</option> <option value="Chapter">Chapter</option> <option value="Journal">Journal Article</option> </select>
+      </div>
+     </div>
+     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div><label for="start-date" class="block text-sm font-medium text-slate-700 mb-2">Start Date</label> <input type="date" id="start-date" required class="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500">
+      </div>
+      <div><label for="due-date" class="block text-sm font-medium text-slate-700 mb-2">Due Date</label> <input type="date" id="due-date" required class="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500">
+      </div>
+     </div>
+     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div><label for="assigned-pe" class="block text-sm font-medium text-slate-700 mb-2">Assigned PE</label> <select id="assigned-pe" required class="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"> <option value="">Select PE</option> <option value="Sarah Johnson">Sarah Johnson</option> <option value="Michael Chen">Michael Chen</option> <option value="Emily Davis">Emily Davis</option> <option value="James Wilson">James Wilson</option> </select>
+      </div>
+      <div><label for="current-stage" class="block text-sm font-medium text-slate-700 mb-2">Current Stage</label> <select id="current-stage" required class="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"> <option value="Received">Manuscript Received</option> <option value="Copyediting">Copyediting</option> <option value="Typesetting">Typesetting</option> <option value="Proofing">Proofing</option> <option value="Final QC">Final QC</option> <option value="Completed">Completed</option> </select>
+      </div>
+     </div>
+     <div><label for="status" class="block text-sm font-medium text-slate-700 mb-2">Status</label> <select id="status" required class="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"> <option value="Not Started">Not Started</option> <option value="In Progress">In Progress</option> <option value="On Hold">On Hold</option> <option value="With Author">With Author</option> <option value="Completed">Completed</option> <option value="Delayed">Delayed</option> </select>
+     </div>
+     <div class="flex items-center justify-end gap-3 pt-4"><button type="button" onclick="closeProjectModal()" class="px-5 py-2.5 border border-slate-200 rounded-xl text-slate-600 font-medium hover:bg-slate-50 transition-colors"> Cancel </button> <button type="submit" id="submit-btn" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-medium transition-colors flex items-center gap-2"> <span id="submit-text">Create Project</span>
+       <svg id="submit-spinner" class="hidden w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewbox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" class="opacity-25" /> <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" class="opacity-75" />
+       </svg></button>
+     </div>
+    </form>
+   </div>
+  </div><!-- Delete Confirmation Modal -->
+  <div id="delete-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden modal-overlay">
+   <div class="bg-white rounded-2xl w-full max-w-md m-4 p-6">
+    <div class="flex items-center gap-4 mb-4">
+     <div class="w-12 h-12 rounded-full bg-rose-100 flex items-center justify-center">
+      <svg class="w-6 h-6 text-rose-600" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+      </svg>
+     </div>
+     <div>
+      <h3 class="text-lg font-semibold text-slate-800">Delete Project</h3>
+      <p class="text-sm text-slate-500">This action cannot be undone.</p>
+     </div>
+    </div>
+    <p class="text-slate-600 mb-6">Are you sure you want to delete "<span id="delete-project-title" class="font-medium"></span>"?</p>
+    <div class="flex items-center justify-end gap-3"><button onclick="closeDeleteModal()" class="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 font-medium hover:bg-slate-50 transition-colors"> Cancel </button> <button onclick="confirmDelete()" id="confirm-delete-btn" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-medium transition-colors flex items-center gap-2"> <span>Delete</span>
+      <svg id="delete-spinner" class="hidden w-4 h-4 animate-spin" fill="none" viewbox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" class="opacity-25" /> <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" class="opacity-75" />
+      </svg></button>
+    </div>
+   </div>
+  </div><!-- Toast Container -->
+  <div id="toast-container" class="fixed bottom-6 right-6 z-50 space-y-3"></div>
+  <script>
+    // Default config
+    const defaultConfig = {
+      dashboard_title: 'Publishing Production CMS',
+      company_name: 'Production Suite',
+      background_color: '#f8fafc',
+      sidebar_color: '#0f172a',
+      accent_color: '#10b981',
+      text_color: '#334155',
+      card_color: '#ffffff'
+    };
+    
+    let config = { ...defaultConfig };
+    
+    // Inject projects from backend (Jinja2)
+    let projects = [
+      {% for project in projects %}
+      {
+        "__backendId": "{{ project.id }}",
+        "project_id": "{{ project.code }}",
+        "title": "{{ project.title }}",
+        "client": "{{ project.client_name }}",
+        "manuscript_type": "Book",
+        "current_stage": "{% if project.status == 'RECEIVED' %}Received{% elif project.status == 'PROCESSING' %}Copyediting{% elif project.status == 'XML_GENERATED' %}Typesetting{% elif project.status == 'PUBLISHED' %}Completed{% else %}Received{% endif %}",
+        "status": "{% if project.status == 'PUBLISHED' %}Completed{% else %}In Progress{% endif %}",
+        "due_date": "", 
+        "start_date": "",
+        "isbn": "",
+        "assigned_pe": ""
+      }{{ "," if not loop.last }}
+      {% endfor %}
+    ];
+
+    let projectToDelete = null;
+    let isEditing = false;
+    
+    // Element SDK Init
+    if (window.elementSdk) {
+      window.elementSdk.init({
+        defaultConfig,
+        onConfigChange: async (newConfig) => {
+          config = { ...defaultConfig, ...newConfig };
+          applyConfig();
+        },
+        mapToCapabilities: (cfg) => ({
+          recolorables: [
+            {
+              get: () => cfg.background_color || defaultConfig.background_color,
+              set: (value) => { cfg.background_color = value; window.elementSdk.setConfig({ background_color: value }); }
+            },
+            {
+              get: () => cfg.sidebar_color || defaultConfig.sidebar_color,
+              set: (value) => { cfg.sidebar_color = value; window.elementSdk.setConfig({ sidebar_color: value }); }
+            },
+            {
+              get: () => cfg.accent_color || defaultConfig.accent_color,
+              set: (value) => { cfg.accent_color = value; window.elementSdk.setConfig({ accent_color: value }); }
+            },
+            {
+              get: () => cfg.text_color || defaultConfig.text_color,
+              set: (value) => { cfg.text_color = value; window.elementSdk.setConfig({ text_color: value }); }
+            },
+            {
+              get: () => cfg.card_color || defaultConfig.card_color,
+              set: (value) => { cfg.card_color = value; window.elementSdk.setConfig({ card_color: value }); }
+            }
+          ],
+          borderables: [],
+          fontEditable: undefined,
+          fontSizeable: undefined
+        }),
+        mapToEditPanelValues: (cfg) => new Map([
+          ['dashboard_title', cfg.dashboard_title || defaultConfig.dashboard_title],
+          ['company_name', cfg.company_name || defaultConfig.company_name]
+        ])
+      });
+    }
+    
+    function applyConfig() {
+      document.getElementById('sidebar-title').textContent = config.dashboard_title || defaultConfig.dashboard_title;
+      document.getElementById('company-name').textContent = config.company_name || defaultConfig.company_name;
+      document.getElementById('dashboard-heading').textContent = config.dashboard_title || defaultConfig.dashboard_title;
+    }
+    
+    // Data SDK Init
+    const dataHandler = {
+      onDataChanged(data) {
+        projects = data;
+        updateDashboard();
+        renderProjectsTable();
+        renderKanbanBoard();
+      }
+    };
+    
+    async function initDataSdk() {
+      if (window.dataSdk) {
+        const result = await window.dataSdk.init(dataHandler);
+        if (!result.isOk) {
+          showToast('Failed to initialize data storage', 'error');
+        }
+      } else {
+        // Fallback: manually init view if SDK is missing
+        updateDashboard();
+        renderProjectsTable();
+        renderKanbanBoard();
+      }
+    }
+    
+    initDataSdk();
+    
+    // View Management
+    function showView(viewName) {
+      document.querySelectorAll('.view-content').forEach(v => v.classList.add('hidden'));
+      document.getElementById(`view-${viewName}`).classList.remove('hidden');
+      
+      document.querySelectorAll('.sidebar-item').forEach(item => {
+        item.classList.remove('active');
+        if (item.dataset.view === viewName) {
+          item.classList.add('active');
+        }
+      });
+    }
+    
+    // Dashboard Updates
+    function updateDashboard() {
+      const total = projects.length;
+      const delayed = projects.filter(p => p.status === 'Delayed').length;
+      const completed = projects.filter(p => p.current_stage === 'Completed').length;
+      
+      document.getElementById('total-projects').textContent = total;
+      document.getElementById('delayed-projects').textContent = delayed;
+      document.getElementById('delayed-count').textContent = delayed;
+      
+      // Stage counts
+      const stageCounts = {
+        'Received': 0,
+        'Copyediting': 0,
+        'Typesetting': 0,
+        'Proofing': 0,
+        'Final QC': 0,
+        'Completed': 0
+      };
+      
+      projects.forEach(p => {
+        if (stageCounts.hasOwnProperty(p.current_stage)) {
+          stageCounts[p.current_stage]++;
+        }
+      });
+      
+      document.getElementById('stage-received').textContent = stageCounts['Received'];
+      document.getElementById('stage-copyediting').textContent = stageCounts['Copyediting'];
+      document.getElementById('stage-typesetting').textContent = stageCounts['Typesetting'];
+      document.getElementById('stage-proofing').textContent = stageCounts['Proofing'];
+      document.getElementById('stage-qc').textContent = stageCounts['Final QC'];
+      document.getElementById('stage-completed').textContent = stageCounts['Completed'];
+    }
+    
+    // Projects Table
+    function renderProjectsTable() {
+      const tbody = document.getElementById('projects-table-body');
+      const filterStatus = document.getElementById('filter-status').value;
+      const filterClient = document.getElementById('filter-client').value;
+      const searchTerm = document.getElementById('search-projects').value.toLowerCase();
+      
+      let filtered = projects.filter(p => {
+        const matchStatus = filterStatus === 'all' || p.status === filterStatus;
+        const matchClient = filterClient === 'all' || p.client === filterClient;
+        const matchSearch = p.title.toLowerCase().includes(searchTerm) || 
+                          p.project_id.toLowerCase().includes(searchTerm);
+        return matchStatus && matchClient && matchSearch;
+      });
+      
+      if (filtered.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" class="py-12 text-center text-slate-500">
+              <div class="flex flex-col items-center">
+                <svg class="w-12 h-12 text-slate-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                <p class="font-medium">${projects.length === 0 ? 'No projects yet' : 'No matching projects'}</p>
+                <p class="text-sm">${projects.length === 0 ? 'Click "New Project" to add your first assignment' : 'Try adjusting your filters'}</p>
+              </div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+      
+      tbody.innerHTML = filtered.map(p => `
+        <tr class="border-b border-slate-50 hover:bg-slate-50">
+          <td class="py-4 px-6">
+            <div>
+              <p class="font-medium text-slate-700">${escapeHtml(p.title)}</p>
+              <p class="text-sm text-slate-500">${escapeHtml(p.project_id)}</p>
+            </div>
+          </td>
+          <td class="py-4 px-6 text-slate-600">${escapeHtml(p.client)}</td>
+          <td class="py-4 px-6">
+            <span class="px-2 py-1 rounded-full text-xs font-medium ${getTypeClass(p.manuscript_type)}">${escapeHtml(p.manuscript_type)}</span>
+          </td>
+          <td class="py-4 px-6">
+            <span class="px-2 py-1 rounded-full text-xs font-medium ${getStageClass(p.current_stage)}">${escapeHtml(p.current_stage)}</span>
+          </td>
+          <td class="py-4 px-6">
+            <span class="px-2 py-1 rounded-full text-xs font-medium ${getStatusClass(p.status)}">${escapeHtml(p.status)}</span>
+          </td>
+          <td class="py-4 px-6 text-slate-600">${formatDate(p.due_date)}</td>
+          <td class="py-4 px-6">
+            <div class="flex items-center gap-2">
+              <button onclick="editProject('${p.__backendId}')" class="w-8 h-8 rounded-lg hover:bg-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-700">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                </svg>
+              </button>
+              <button onclick="openDeleteModal('${p.__backendId}')" class="w-8 h-8 rounded-lg hover:bg-rose-100 flex items-center justify-center text-slate-500 hover:text-rose-600">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                </svg>
+              </button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+    
+    function filterProjects() {
+      renderProjectsTable();
+    }
+    
+    // Kanban Board
+    function renderKanbanBoard() {
+      const stages = {
+        'Received': 'kanban-received',
+        'Copyediting': 'kanban-copyediting',
+        'Typesetting': 'kanban-typesetting',
+        'Proofing': 'kanban-proofing',
+        'Final QC': 'kanban-qc',
+        'Completed': 'kanban-completed'
+      };
+      
+      const counts = {};
+      
+      Object.keys(stages).forEach(stage => {
+        const container = document.getElementById(stages[stage]);
+        const stageProjects = projects.filter(p => p.current_stage === stage);
+        counts[stage] = stageProjects.length;
+        
+        if (stageProjects.length === 0) {
+          container.innerHTML = '<p class="text-sm text-slate-400 text-center py-4">No projects</p>';
+        } else {
+          container.innerHTML = stageProjects.map(p => `
+            <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-100 cursor-pointer hover:shadow-md transition-shadow" onclick="editProject('${p.__backendId}')">
+              <div class="flex items-start justify-between mb-2">
+                <span class="text-xs font-medium text-slate-500">${escapeHtml(p.project_id)}</span>
+                <span class="px-2 py-0.5 rounded-full text-xs font-medium ${getStatusClass(p.status)}">${escapeHtml(p.status)}</span>
+              </div>
+              <p class="font-medium text-slate-700 text-sm mb-2 line-clamp-2">${escapeHtml(p.title)}</p>
+              <div class="flex items-center justify-between text-xs text-slate-500">
+                <span>${escapeHtml(p.client)}</span>
+                <span>Due: ${formatDate(p.due_date)}</span>
+              </div>
+            </div>
+          `).join('');
+        }
+      });
+      
+      // Update counts
+      document.getElementById('kanban-received-count').textContent = counts['Received'];
+      document.getElementById('kanban-copyediting-count').textContent = counts['Copyediting'];
+      document.getElementById('kanban-typesetting-count').textContent = counts['Typesetting'];
+      document.getElementById('kanban-proofing-count').textContent = counts['Proofing'];
+      document.getElementById('kanban-qc-count').textContent = counts['Final QC'];
+      document.getElementById('kanban-completed-count').textContent = counts['Completed'];
+    }
+    
+    // Modal Functions
+    function openProjectModal() {
+      isEditing = false;
+      document.getElementById('modal-title').textContent = 'New Project';
+      document.getElementById('submit-text').textContent = 'Create Project';
+      document.getElementById('project-form').reset();
+      document.getElementById('edit-project-id').value = '';
+      document.getElementById('start-date').value = new Date().toISOString().split('T')[0];
+      document.getElementById('project-modal').classList.remove('hidden');
+    }
+    
+    function closeProjectModal() {
+      document.getElementById('project-modal').classList.add('hidden');
+    }
+    
+    function editProject(backendId) {
+      const project = projects.find(p => p.__backendId === backendId);
+      if (!project) return;
+      
+      isEditing = true;
+      document.getElementById('modal-title').textContent = 'Edit Project';
+      document.getElementById('submit-text').textContent = 'Update Project';
+      document.getElementById('edit-project-id').value = backendId;
+      
+      document.getElementById('project-id').value = project.project_id;
+      document.getElementById('isbn').value = project.isbn || '';
+      document.getElementById('title').value = project.title;
+      document.getElementById('client').value = project.client;
+      document.getElementById('manuscript-type').value = project.manuscript_type;
+      document.getElementById('start-date').value = project.start_date;
+      document.getElementById('due-date').value = project.due_date;
+      document.getElementById('assigned-pe').value = project.assigned_pe;
+      document.getElementById('current-stage').value = project.current_stage;
+      document.getElementById('status').value = project.status;
+      
+      document.getElementById('project-modal').classList.remove('hidden');
+    }
+    
+    async function handleProjectSubmit(event) {
+      event.preventDefault();
+      
+      if (projects.length >= 999 && !isEditing) {
+        showToast('Maximum limit of 999 projects reached. Please delete some projects first.', 'error');
+        return;
+      }
+      
+      const submitBtn = document.getElementById('submit-btn');
+      const submitText = document.getElementById('submit-text');
+      const submitSpinner = document.getElementById('submit-spinner');
+      
+      submitBtn.disabled = true;
+      submitSpinner.classList.remove('hidden');
+      submitText.textContent = isEditing ? 'Updating...' : 'Creating...';
+      
+      /*
+      const projectData = {
+        project_id: document.getElementById('project-id').value,
+        isbn: document.getElementById('isbn').value,
+        title: document.getElementById('title').value,
+        client: document.getElementById('client').value,
+        manuscript_type: document.getElementById('manuscript-type').value,
+        start_date: document.getElementById('start-date').value,
+        due_date: document.getElementById('due-date').value,
+        assigned_pe: document.getElementById('assigned-pe').value,
+        current_stage: document.getElementById('current-stage').value,
+        status: document.getElementById('status').value
+      };
+      
+      let result;
+      if (isEditing) {
+        const backendId = document.getElementById('edit-project-id').value;
+        const existingProject = projects.find(p => p.__backendId === backendId);
+        result = await window.dataSdk.update({
+          ...existingProject,
+          ...projectData
+        });
+      } else {
+        projectData.id = Date.now().toString();
+        projectData.created_at = new Date().toISOString();
+        result = await window.dataSdk.create(projectData);
+      }
+      */
+      
+      // Mock result
+      await new Promise(r => setTimeout(r, 1000));
+      
+      submitBtn.disabled = false;
+      submitSpinner.classList.add('hidden');
+      submitText.textContent = isEditing ? 'Update Project' : 'Create Project';
+      
+      showToast('Backend integration required to save changes.', 'info');
+      /*
+      if (result.isOk) {
+        closeProjectModal();
+        showToast(isEditing ? 'Project updated successfully!' : 'Project created successfully!', 'success');
+      } else {
+        showToast('Failed to save project. Please try again.', 'error');
+      }
+      */
+    }
+    
+    function openDeleteModal(backendId) {
+      const project = projects.find(p => p.__backendId === backendId);
+      if (!project) return;
+      
+      projectToDelete = project;
+      document.getElementById('delete-project-title').textContent = project.title;
+      document.getElementById('delete-modal').classList.remove('hidden');
+    }
+    
+    function closeDeleteModal() {
+      document.getElementById('delete-modal').classList.add('hidden');
+      projectToDelete = null;
+    }
+    
+    async function confirmDelete() {
+      if (!projectToDelete) return;
+      
+      const deleteBtn = document.getElementById('confirm-delete-btn');
+      const deleteSpinner = document.getElementById('delete-spinner');
+      
+      deleteBtn.disabled = true;
+      deleteSpinner.classList.remove('hidden');
+      
+      /*
+      const result = await window.dataSdk.delete(projectToDelete);
+      */
+      
+      // Mock result
+      await new Promise(r => setTimeout(r, 1000));
+      
+      deleteBtn.disabled = false;
+      deleteSpinner.classList.add('hidden');
+      
+      closeDeleteModal();
+      showToast('Backend integration required to delete projects.', 'info');
+      
+      /*
+      if (result.isOk) {
+        closeDeleteModal();
+        showToast('Project deleted successfully!', 'success');
+      } else {
+        showToast('Failed to delete project. Please try again.', 'error');
+      }
+      */
+    }
+    
+    // Toast Notifications
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      
+      const colors = {
+        success: 'bg-emerald-500',
+        error: 'bg-rose-500',
+        info: 'bg-blue-500'
+      };
+      
+      toast.className = `toast ${colors[type]} text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-3`;
+      toast.innerHTML = `
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          ${type === 'success' ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>' : 
+            type === 'error' ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>' :
+            '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>'}
+        </svg>
+        <span>${escapeHtml(message)}</span>
+      `;
+      
+      container.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(100%)';
+        toast.style.transition = 'all 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+    
+    // Utility Functions
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+    
+    function formatDate(dateStr) {
+      if (!dateStr) return 'N/A';
+      const date = new Date(dateStr);
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+    
+    function getTypeClass(type) {
+      const classes = {
+        'Book': 'bg-blue-100 text-blue-700',
+        'Chapter': 'bg-violet-100 text-violet-700',
+        'Journal': 'bg-teal-100 text-teal-700'
+      };
+      return classes[type] || 'bg-slate-100 text-slate-700';
+    }
+    
+    function getStageClass(stage) {
+      const classes = {
+        'Received': 'bg-slate-100 text-slate-700',
+        'Copyediting': 'bg-blue-100 text-blue-700',
+        'Typesetting': 'bg-violet-100 text-violet-700',
+        'Proofing': 'bg-amber-100 text-amber-700',
+        'Final QC': 'bg-teal-100 text-teal-700',
+        'Completed': 'bg-emerald-100 text-emerald-700'
+      };
+      return classes[stage] || 'bg-slate-100 text-slate-700';
+    }
+    
+    function getStatusClass(status) {
+      const classes = {
+        'Not Started': 'bg-slate-100 text-slate-700',
+        'In Progress': 'bg-blue-100 text-blue-700',
+        'On Hold': 'bg-amber-100 text-amber-700',
+        'With Author': 'bg-violet-100 text-violet-700',
+        'Completed': 'bg-emerald-100 text-emerald-700',
+        'Delayed': 'bg-rose-100 text-rose-700'
+      };
+      return classes[status] || 'bg-slate-100 text-slate-700';
+    }
+    
+    // Initialize
+    applyConfig();
+  </script>
+</body>
+</html>

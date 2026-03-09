@@ -1,0 +1,84 @@
+{% extends "base_tailwind.html" %}
+
+{% block title %}Structuring Review – {{ filename }}{% endblock %}
+
+{% block content %}
+<div class="flex flex-col h-[calc(100vh-64px)] overflow-hidden bg-slate-100">
+
+    <!-- Toolbar -->
+    <div
+        class="h-14 bg-white border-b border-slate-200 flex items-center justify-between px-6 shadow-sm z-20 flex-shrink-0">
+        <div class="flex items-center gap-4">
+            <i class="fas fa-file-word text-blue-600 text-xl"></i>
+            <h1 class="text-lg font-semibold text-slate-800 truncate max-w-xl">{{ filename }}</h1>
+            <span id="saveStatus"
+                class="text-xs font-medium text-emerald-600 hidden bg-emerald-50 px-2 py-1 rounded-full border border-emerald-100">
+                <i class="fas fa-check-circle me-1"></i> Saved
+            </span>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <!-- Save & Exit -->
+            <button onclick="saveAndExit()"
+                class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm rounded-lg font-medium transition-colors shadow-sm flex items-center gap-2 border border-slate-200">
+                <i class="fas fa-arrow-left"></i> Save &amp; Exit
+            </button>
+
+            <!-- Export -->
+            <a href="{{ request.url_for('export_structuring', file_id=file.id) }}"
+                class="px-4 py-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-sm rounded-lg font-medium transition-colors shadow-sm flex items-center gap-2">
+                <i class="fas fa-file-word text-blue-600"></i> Export Word
+            </a>
+        </div>
+    </div>
+
+    <!-- LibreOffice Online iframe -->
+    <div class="flex-1 relative">
+        {% if collabora_url %}
+        <iframe id="collaboraFrame" src="{{ collabora_url }}" class="w-full h-full border-0"
+            allow="clipboard-read; clipboard-write" allowfullscreen>
+        </iframe>
+        {% else %}
+        <!-- Fallback: Collabora not configured -->
+        <div class="flex flex-col items-center justify-center h-full text-center p-12">
+            <i class="fas fa-exclamation-triangle text-5xl text-amber-400 mb-4"></i>
+            <h2 class="text-xl font-semibold text-slate-700 mb-2">LibreOffice Online not configured</h2>
+            <p class="text-slate-500 mb-6 max-w-lg">
+                Start the Collabora Docker container to enable in-browser editing:
+            </p>
+            <pre class="bg-slate-800 text-green-300 text-xs rounded-lg p-4 text-left max-w-2xl w-full overflow-x-auto">docker run -t -d -p 9980:9980 \
+  -e "aliasgroup1=http://host.docker.internal:8000" \
+  --name collabora \
+  collabora/code</pre>
+            <p class="text-slate-400 text-sm mt-4">Then restart the CMS server and reload this page.</p>
+            <div class="mt-8 flex gap-4">
+                <a href="{{ request.url_for('export_structuring', file_id=file.id) }}"
+                    class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium flex items-center gap-2">
+                    <i class="fas fa-download"></i> Download &amp; Edit Locally
+                </a>
+                <button onclick="window.history.back()"
+                    class="px-5 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg font-medium flex items-center gap-2">
+                    <i class="fas fa-arrow-left"></i> Go Back
+                </button>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function saveAndExit() {
+        // The file is auto-saved by Collabora via WOPI PutFile.
+        // We just navigate back to the chapter Manuscript tab.
+        {% if file.project_id and file.chapter_id %}
+        window.location.href = "/projects/{{ file.project_id }}/chapter/{{ file.chapter_id }}?tab=Manuscript";
+        {% elif file.project_id %}
+        window.location.href = "/projects/{{ file.project_id }}";
+        {% else %}
+        window.history.back();
+        {% endif %}
+    }
+</script>
+{% endblock %}

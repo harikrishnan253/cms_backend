@@ -1,0 +1,85 @@
+{% extends "base_tailwind.html" %}
+
+{% block title %}Admin Dashboard - S4carlisle{% endblock %}
+
+{% block content %}
+<div class="flex flex-col h-full p-8">
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h2 class="text-3xl font-bold text-slate-800">Admin Dashboard</h2>
+            <p class="text-slate-500 mt-1">System overview and management</p>
+        </div>
+        <a href="/dashboard" class="px-4 py-2 bg-white border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 transition-colors shadow-sm flex items-center gap-2">
+            <i class="fas fa-arrow-left"></i> Back to User Dashboard
+        </a>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col items-center justify-center text-center">
+            <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-3 text-blue-600">
+                <i class="fas fa-users text-xl"></i>
+            </div>
+            <h3 class="text-3xl font-bold text-slate-800">{{ admin_stats.total_users }}</h3>
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mt-1">Total Users</p>
+        </div>
+        
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col items-center justify-center text-center">
+            <div class="w-12 h-12 bg-cyan-100 rounded-full flex items-center justify-center mb-3 text-cyan-600">
+                <i class="fas fa-file-alt text-xl"></i>
+            </div>
+            <h3 class="text-3xl font-bold text-slate-800">{{ admin_stats.total_files }}</h3>
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mt-1">Total Files</p>
+        </div>
+
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col items-center justify-center text-center">
+            <div class="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center mb-3 text-emerald-600">
+                <i class="fas fa-check-circle text-xl"></i>
+            </div>
+            <h3 class="text-3xl font-bold text-slate-800">{{ admin_stats.total_validations if admin_stats.total_validations else 0 }}</h3>
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mt-1">Total Validations</p>
+        </div>
+
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col items-center justify-center text-center">
+            <div class="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mb-3 text-amber-600">
+                <i class="fas fa-server text-xl"></i>
+            </div>
+            <h3 class="text-3xl font-bold text-slate-800">OK</h3>
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mt-1">System Status</p>
+        </div>
+    </div>
+
+    <!-- Management Links -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <a href="/admin/users" class="group bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:border-emerald-500 hover:shadow-md transition-all flex items-center gap-4">
+            <div class="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                <i class="fas fa-user-cog text-xl"></i>
+            </div>
+            <div>
+                <h4 class="font-bold text-slate-800 text-lg">Manage Users</h4>
+                <p class="text-sm text-slate-500">Create, edit, delete users</p>
+            </div>
+        </a>
+
+        <a href="/admin/stats" class="group bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:border-emerald-500 hover:shadow-md transition-all flex items-center gap-4">
+            <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center text-purple-600 group-hover:bg-purple-600 group-hover:text-white transition-colors">
+                <i class="fas fa-chart-line text-xl"></i>
+            </div>
+            <div>
+                <h4 class="font-bold text-slate-800 text-lg">Detailed Stats</h4>
+                <p class="text-sm text-slate-500">View detailed reports</p>
+            </div>
+        </a>
+
+        <a href="#" class="group bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:border-emerald-500 hover:shadow-md transition-all flex items-center gap-4">
+            <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center text-orange-600 group-hover:bg-orange-600 group-hover:text-white transition-colors">
+                <i class="fas fa-cogs text-xl"></i>
+            </div>
+            <div>
+                <h4 class="font-bold text-slate-800 text-lg">Settings</h4>
+                <p class="text-sm text-slate-500">System configuration</p>
+            </div>
+        </a>
+    </div>
+</div>
+{% endblock %}

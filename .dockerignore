@@ -1,0 +1,67 @@
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# ── Virtual environment ────────────────────────────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+
+# ── Git ───────────────────────────────────────────────────────────────────────
+.git/
+.gitignore
+.gitattributes
+
+# ── IDE / Editor ──────────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.iml
+*.iml
+
+# ── OS ────────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Docker ────────────────────────────────────────────────────────────────────
+docker-compose*.yml
+Dockerfile
+.dockerignore
+
+# ── Test files ────────────────────────────────────────────────────────────────
+tests/
+*.test.py
+
+# ── Documentation ─────────────────────────────────────────────────────────────
+*.md
+docs/
+
+# ── Local data / outputs (mounted as volumes in compose) ─────────────────────
+uploads/
+outputs/
+temp_reports/
+cms.db
+
+# ── Env files (never bake secrets into the image) ─────────────────────────────
+.env
+.env.*
+
+# ── Alembic migrations (only needed at runtime, not build time) ───────────────
+# Comment out if you want migrations copied into image
+# alembic/
+
+# ── Large / unnecessary files ─────────────────────────────────────────────────
+*.log
+*.tmp
+*.bak
+*.zip
+*.tar.gz
+ref_cache.json

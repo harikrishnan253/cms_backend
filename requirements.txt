@@ -1,0 +1,26 @@
+sqlalchemy
+psycopg2-binary
+python-jose
+passlib[bcrypt]
+python-multipart
+pydantic-settings
+alembic
+celery
+redis
+python-docx
+lxml
+bcrypt
+jinja2
+pywin32; sys_platform == 'win32'
+openpyxl
+pandas
+PyYAML
+fastapi
+uvicorn
+gunicorn
+python-dotenv
+requests
+pdfplumber
+google-generativeai
+google-genai
+chardet

@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Create User - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="row mb-4 fade-in">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h2 class="brand-title mb-1">Create New User</h2>
+                <p class="text-muted mb-0">Add a new user to the system</p>
+            </div>
+            <a href="/admin/users" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Back to Users
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row justify-content-center fade-in">
+    <div class="col-lg-6 col-md-8">
+        <div class="card shadow-xl border-0">
+            <div class="card-body p-4 p-md-5">
+                <form method="POST" action="/admin/users/create">
+
+                    <!-- Username -->
+                    <div class="mb-4">
+                        <label for="username" class="form-label fw-bold small text-uppercase text-muted">Username <span
+                                class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0"><i
+                                    class="fas fa-user text-muted"></i></span>
+                            <input type="text" class="form-control border-start-0 ps-0" id="username" name="username"
+                                placeholder="e.g. john_doe" required>
+                        </div>
+                    </div>
+
+                    <!-- Email -->
+                    <div class="mb-4">
+                        <label for="email" class="form-label fw-bold small text-uppercase text-muted">Email <span
+                                class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0"><i
+                                    class="fas fa-envelope text-muted"></i></span>
+                            <input type="email" class="form-control border-start-0 ps-0" id="email" name="email"
+                                placeholder="e.g. john@example.com" required>
+                        </div>
+                    </div>
+
+                    <!-- Password -->
+                    <div class="mb-4">
+                        <label for="password" class="form-label fw-bold small text-uppercase text-muted">Password <span
+                                class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0"><i
+                                    class="fas fa-lock text-muted"></i></span>
+                            <input type="password" class="form-control border-start-0 ps-0" id="password"
+                                name="password" placeholder="Min. 6 characters" required>
+                        </div>
+                    </div>
+
+                    <!-- Role -->
+                    <div class="mb-4">
+                        <label for="role_id" class="form-label fw-bold small text-uppercase text-muted">Assign Role
+                            <span class="text-danger">*</span></label>
+                        <select class="form-select form-select-lg shadow-sm" id="role_id" name="role_id" required>
+                            {% for role in roles %}
+                            <option value="{{ role.id }}">{{ role.name }} - {{ role.description }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Submit -->
+                    <div class="d-grid mt-5">
+                        <button type="submit" class="btn btn-rainbow shadow-lg">
+                            <i class="fas fa-user-plus me-2"></i>Create User
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="S4carlisle CMS - Modern Publishing Management System">
+    <meta name="theme-color" content="#667eea">
+
+    <title>{% block title %}S4carlisle CMS{% endblock %}</title>
+
+    <!-- Preconnect for Performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Custom CSS -->
+    <link href="/static/css/style.css" rel="stylesheet">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>">
+</head>
+
+<body>
+    <!-- Top Navbar - Enhanced -->
+    <nav class="navbar navbar-expand-lg navbar-top sticky-top">
+        <div class="container-fluid px-3 px-md-4">
+            <!-- Brand -->
+            <a class="navbar-brand brand-title d-flex align-items-center" href="/dashboard">
+                <img src="{{ url_for('static', path='images/S4c.png') }}" alt="S4Carlisle Logo" style="height: 40px;"
+                    class="me-2">
+                <span class="d-none d-sm-inline">S4carlisle Prod Hub</span>
+            </a>
+
+            <!-- Mobile Toggle Button -->
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <!-- Navbar Content -->
+            <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+                <ul class="navbar-nav align-items-lg-center gap-2 mt-3 mt-lg-0">
+                    <!-- Dashboard Link -->
+                    <li class="nav-item">
+                        <a class="nav-link nav-link-custom" href="/dashboard">
+                            <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                        </a>
+                    </li>
+
+                    <!-- Quick Actions Dropdown -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link nav-link-custom dropdown-toggle" href="#" role="button"
+                            data-bs-toggle="dropdown">
+                            <i class="fas fa-bolt me-2"></i>Quick Actions
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg">
+                            <li>
+                                <h6 class="dropdown-header">
+                                    <i class="fas fa-magic me-2 text-primary"></i>Quick Actions
+                                </h6>
+                            </li>
+                            <li><a class="dropdown-item" href="#" data-bs-toggle="modal"
+                                    data-bs-target="#newProjectModal">
+                                    <i class="fas fa-plus-circle me-2 text-success"></i>New Project
+                                </a></li>
+                            <li><a class="dropdown-item" href="#">
+                                    <i class="fas fa-upload me-2 text-info"></i>Bulk Upload
+                                </a></li>
+                            <li><a class="dropdown-item" href="#">
+                                    <i class="fas fa-download me-2 text-warning"></i>Export Data
+                                </a></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item" href="#">
+                                    <i class="fas fa-book me-2 text-muted"></i>Documentation
+                                </a></li>
+                        </ul>
+                    </li>
+
+                    <!-- Notifications (Dynamic) -->
+                    <li class="nav-item dropdown d-none d-lg-block">
+                        <a class="nav-link nav-link-custom position-relative" href="#" role="button"
+                            data-bs-toggle="dropdown" id="notifDropdownBtn">
+                            <i class="fas fa-bell"></i>
+                            <span id="notifBadge"
+                                class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none"
+                                style="font-size: 0.6rem;">
+                                0
+                            </span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg" style="min-width: 320px;">
+                            <li>
+                                <h6 class="dropdown-header d-flex justify-content-between align-items-center">
+                                    <span><i class="fas fa-bell me-2 text-primary"></i>Notifications</span>
+                                    <span id="notifCountHeader" class="badge bg-primary rounded-pill">0</span>
+                                </h6>
+                            </li>
+                            <div id="notifListContainer" style="max-height: 300px; overflow-y: auto;">
+                                <li>
+                                    <div class="text-center py-3 text-muted small"><i
+                                            class="fas fa-spinner fa-spin me-2"></i>Loading...</div>
+                                </li>
+                            </div>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item text-center small text-primary" href="/activities">
+                                    View All Activity
+                                </a></li>
+                        </ul>
+                    </li>
+
+                    <!-- User Dropdown -->
+                    <li class="nav-item dropdown">
+                        {% if user %}
+                        <a class="nav-link nav-link-custom dropdown-toggle d-flex align-items-center" href="#"
+                            role="button" data-bs-toggle="dropdown">
+                            <div class="d-inline-flex align-items-center justify-content-center rounded-circle me-2 shadow-sm"
+                                style="width: 32px; height: 32px; background: linear-gradient(135deg, #43e97b, #38f9d7); color: white; font-weight: bold; font-size: 0.8rem;">
+                                {{ user.username[0]|upper }}
+                            </div>
+                            <span class="d-none d-lg-inline">{{ user.username }}</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg">
+                            <li>
+                                <div class="dropdown-header">
+                                    <div class="fw-bold">{{ user.username }}</div>
+                                    <div class="small text-muted">{{ user.email if user.email else 'User Account' }}
+                                    </div>
+                                </div>
+                            </li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item" href="#">
+                                    <i class="fas fa-user me-2 text-muted"></i>Profile
+                                </a></li>
+                            <li><a class="dropdown-item" href="#">
+                                    <i class="fas fa-cog me-2 text-muted"></i>Settings
+                                </a></li>
+                            <li><a class="dropdown-item" href="#">
+                                    <i class="fas fa-question-circle me-2 text-muted"></i>Help Center
+                                </a></li>
+                            {% if 'Admin' in user.roles %}
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item text-primary" href="/admin">
+                                    <i class="fas fa-users-cog me-2"></i>Admin Panel
+                                </a></li>
+                            {% endif %}
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item text-danger" href="/logout">
+                                    <i class="fas fa-sign-out-alt me-2"></i>Logout
+                                </a></li>
+                        </ul>
+                        {% else %}
+                        <a class="btn btn-primary btn-sm shadow-sm" href="/login">
+                            <i class="fas fa-sign-in-alt me-1"></i>Login
+                        </a>
+                        {% endif %}
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <div class="container-fluid main-content px-3 px-md-4 mt-4">
+        <!-- Global Error Alert -->
+        {% if error %}
+        <div class="alert alert-danger border-0 shadow-lg alert-dismissible fade show" role="alert">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-exclamation-triangle fa-2x me-3"></i>
+                <div>
+                    <strong>Error!</strong> {{ error }}
+                </div>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endif %}
+
+        <!-- Page Content -->
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Footer - Enhanced -->
+    <footer class="dashboard-footer mt-5">
+        <div class="container-fluid px-3 px-md-4">
+            <div class="row align-items-center py-3">
+                <div class="col-md-6 text-center text-md-start mb-2 mb-md-0">
+                    <div class="d-flex align-items-center justify-content-center justify-content-md-start gap-2">
+                        <div class="d-inline-flex align-items-center justify-content-center rounded-circle shadow-sm"
+                            style="width: 30px; height: 30px; background: linear-gradient(135deg, #667eea, #764ba2);">
+                            <i class="fas fa-layer-group text-white" style="font-size: 0.8rem;"></i>
+                        </div>
+                        <span class="small">
+                            &copy; 2024 <strong>S4Carlisle</strong> Publishing Services
+                        </span>
+                    </div>
+                </div>
+                <div class="col-md-6 text-center text-md-end">
+                    <div
+                        class="d-flex align-items-center justify-content-center justify-content-md-end gap-3 flex-wrap">
+                        <a href="#" class="text-decoration-none small text-muted">
+                            <i class="fas fa-shield-alt me-1"></i>Privacy
+                        </a>
+                        <a href="#" class="text-decoration-none small text-muted">
+                            <i class="fas fa-file-contract me-1"></i>Terms
+                        </a>
+                        <a href="#" class="text-decoration-none small text-muted">
+                            <i class="fas fa-book me-1"></i>Documentation
+                        </a>
+                        <a href="#" class="text-decoration-none small text-muted">
+                            <i class="fas fa-envelope me-1"></i>Support
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Version Info (Optional) -->
+            <div class="row d-none d-lg-flex">
+                <div class="col-12 text-center border-top pt-2">
+                    <small class="text-muted">
+                        <i class="fas fa-code me-1"></i>Version 1.0.0 |
+                        <i class="fas fa-server me-1"></i>Server Status:
+                        <span class="badge bg-success" style="font-size: 0.7rem;">
+                            <i class="fas fa-circle"></i> Online
+                        </span>
+                    </small>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scroll to Top Button -->
+    <button id="scrollTopBtn" class="btn btn-primary rounded-circle shadow-lg position-fixed"
+        style="bottom: 20px; right: 20px; width: 50px; height: 50px; display: none; z-index: 1000;">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+
+    <!-- Loading Overlay (Optional) -->
+    <div id="loadingOverlay" class="position-fixed top-0 start-0 w-100 h-100 d-none"
+        style="background: rgba(0,0,0,0.5); z-index: 9999; backdrop-filter: blur(5px);">
+        <div class="d-flex align-items-center justify-content-center h-100">
+            <div class="text-center">
+                <div class="spinner-border text-primary mb-3" role="status" style="width: 4rem; height: 4rem;">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <div class="text-white fw-bold">Loading...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Custom JavaScript -->
+    <script>
+        // Scroll to Top Button
+        const scrollTopBtn = document.getElementById('scrollTopBtn');
+
+        window.addEventListener('scroll', function () {
+            if (window.pageYOffset > 300) {
+                scrollTopBtn.style.display = 'block';
+            } else {
+                scrollTopBtn.style.display = 'none';
+            }
+        });
+
+        scrollTopBtn?.addEventListener('click', function () {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+
+        // Auto-dismiss alerts after 5 seconds
+        document.addEventListener('DOMContentLoaded', function () {
+            const alerts = document.querySelectorAll('.alert:not(.alert-permanent)');
+            alerts.forEach(alert => {
+                setTimeout(() => {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                }, 5000);
+            });
+        });
+
+        // Loading overlay helper functions
+        function showLoading() {
+            document.getElementById('loadingOverlay')?.classList.remove('d-none');
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay')?.classList.add('d-none');
+        }
+
+        // Form submission with loading
+        document.querySelectorAll('form[data-loading="true"]').forEach(form => {
+            form.addEventListener('submit', function () {
+                showLoading();
+            });
+        });
+
+        // Navbar active link highlighting
+        const currentLocation = window.location.pathname;
+        const navLinks = document.querySelectorAll('.nav-link-custom');
+
+        navLinks.forEach(link => {
+            if (link.getAttribute('href') === currentLocation) {
+                link.classList.add('active');
+                link.style.background = 'linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(236, 72, 153, 0.1))';
+                link.style.color = 'var(--primary)';
+            }
+        });
+
+        // Toast Notifications Helper
+        function showToast(message, type = 'success') {
+            const toastContainer = document.getElementById('toastContainer') || createToastContainer();
+            const toastId = 'toast-' + Date.now();
+
+            const toastHTML = `
+                <div id="${toastId}" class="toast align-items-center border-0 shadow-lg" role="alert" 
+                     style="background: linear-gradient(135deg, ${type === 'success' ? '#43e97b, #38f9d7' : '#ef4444, #dc2626'}); color: white;">
+                    <div class="d-flex">
+                        <div class="toast-body fw-bold">
+                            <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>
+                            ${message}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                    </div>
+                </div>
+            `;
+
+            toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+            const toastElement = document.getElementById(toastId);
+            const toast = new bootstrap.Toast(toastElement, { delay: 3000 });
+            toast.show();
+
+            toastElement.addEventListener('hidden.bs.toast', function () {
+                toastElement.remove();
+            });
+        }
+
+        function createToastContainer() {
+            const container = document.createElement('div');
+            container.id = 'toastContainer';
+            container.className = 'position-fixed bottom-0 end-0 p-3';
+            container.style.zIndex = '11';
+            document.body.appendChild(container);
+            return container;
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function (e) {
+            // Ctrl/Cmd + K for search (if search exists)
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                const searchInput = document.getElementById('searchProjects');
+                if (searchInput) {
+                    searchInput.focus();
+                }
+            }
+        });
+
+        // Fetch Notifications
+        async function updateNotifications() {
+            try {
+                const response = await fetch('/api/notifications');
+                if (response.ok) {
+                    const data = await response.json();
+                    const badge = document.getElementById('notifBadge');
+                    const headerCount = document.getElementById('notifCountHeader');
+                    const list = document.getElementById('notifListContainer');
+
+                    if (!badge || !headerCount || !list) return;
+
+                    if (data.length > 0) {
+                        badge.innerText = data.length;
+                        badge.classList.remove('d-none');
+                        headerCount.innerText = data.length;
+
+                        list.innerHTML = data.map(n => `
+                            <li><a class="dropdown-item py-2 border-bottom" href="#">
+                                <div class="d-flex align-items-center">
+                                    <div class="flex-shrink-0 me-3">
+                                        <div class="rounded-circle bg-light d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                            <i class="fas ${n.icon} ${n.color}"></i>
+                                        </div>
+                                    </div>
+                                    <div class="flex-grow-1 min-width-0">
+                                        <div class="fw-bold small text-truncate">${n.title}</div>
+                                        <div class="small text-muted text-truncate">${n.desc}</div>
+                                        <div class="small text-muted mt-1" style="font-size: 0.65rem;">
+                                            <i class="far fa-clock me-1"></i>${n.time}
+                                        </div>
+                                    </div>
+                                </div>
+                            </a></li>
+                        `).join('');
+                    } else {
+                        badge.classList.add('d-none');
+                        headerCount.innerText = '0';
+                        list.innerHTML = `
+                            <div class="text-center py-4">
+                                <i class="far fa-bell-slash fa-2x text-muted mb-2 opacity-50"></i>
+                                <p class="small text-muted mb-0">No new notifications</p>
+                            </div>`;
+                    }
+                }
+            } catch (e) {
+                console.error("Failed to fetch notifications", e);
+            }
+        }
+
+        // Initial fetch and poll
+        document.addEventListener('DOMContentLoaded', () => {
+            updateNotifications();
+            setInterval(updateNotifications, 60000); // Check every minute
+        });
+
+        // Service Worker for PWA (Optional - uncomment if needed)
+        /*
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/static/js/service-worker.js')
+                    .then(function(registration) {
+                        console.log('ServiceWorker registered');
+                    })
+                    .catch(function(err) {
+                        console.log('ServiceWorker registration failed: ', err);
+                    });
+            });
+        }
+        */
+    </script>
+
+    <!-- Additional Scripts Block -->
+    {% block scripts %}{% endblock %}
+</body>
+
+</html>

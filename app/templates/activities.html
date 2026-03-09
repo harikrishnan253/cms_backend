@@ -1,0 +1,171 @@
+{% extends "base_tailwind.html" %}
+
+{% block title %}Recent Activities - S4carlisle CMS{% endblock %}
+
+{% block content %}
+<div class="flex flex-col h-full p-8">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-slate-800 flex items-center gap-3">
+                <i class="fas fa-history text-blue-600"></i> Recent Activities
+            </h1>
+            <p class="text-slate-500 mt-1">Track all file uploads, processing, and system activities</p>
+        </div>
+        <div>
+            <a href="/dashboard" class="px-4 py-2 bg-white border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 transition-colors shadow-sm flex items-center gap-2">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center">
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-sm flex-shrink-0">
+                <i class="fas fa-list"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-slate-500">Total Activities</p>
+                <p class="text-2xl font-bold text-slate-800">{{ activities|length }}</p>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center">
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white shadow-sm flex-shrink-0">
+                <i class="fas fa-file-upload"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-slate-500">File Uploads</p>
+                <p class="text-2xl font-bold text-slate-800">{{ activities|selectattr('type', 'equalto', 'upload')|list|length }}</p>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center">
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-rose-400 to-orange-400 flex items-center justify-center text-white shadow-sm flex-shrink-0">
+                <i class="fas fa-cogs"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-slate-500">Processing</p>
+                <p class="text-2xl font-bold text-slate-800">{{ activities|selectattr('type', 'equalto', 'version')|list|length }}</p>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center">
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-fuchsia-400 to-pink-500 flex items-center justify-center text-white shadow-sm flex-shrink-0">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-slate-500">Today</p>
+                <p class="text-2xl font-bold text-slate-800">{{ today_count }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Timeline -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div class="p-6 border-b border-slate-100">
+            <h5 class="font-bold text-slate-800 flex items-center gap-2">
+                <i class="fas fa-stream text-blue-600"></i> Activity Timeline
+            </h5>
+        </div>
+        
+        {% if activities %}
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+                <thead class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-200">
+                    <tr>
+                        <th class="px-6 py-4 w-12"></th>
+                        <th class="px-6 py-4">Activity</th>
+                        <th class="px-6 py-4">Description</th>
+                        <th class="px-6 py-4">Project</th>
+                        <th class="px-6 py-4">Chapter</th>
+                        <th class="px-6 py-4">Category</th>
+                        <th class="px-6 py-4 text-right">Time</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for activity in activities %}
+                    <tr class="hover:bg-slate-50 transition-colors group">
+                        <td class="px-6 py-4 pl-8">
+                            {% if activity.type == 'upload' %}
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-sm">
+                                <i class="fas {{ activity.icon }} text-xs"></i>
+                            </div>
+                            {% else %}
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white shadow-sm">
+                                <i class="fas {{ activity.icon }} text-xs"></i>
+                            </div>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="font-bold text-slate-800">{{ activity.title }}</div>
+                            <div class="text-xs text-slate-500 mt-0.5">
+                                {% if activity.type == 'upload' %}
+                                <i class="fas fa-upload mr-1"></i> New file
+                                {% else %}
+                                <i class="fas fa-cogs mr-1"></i> Processed
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="text-slate-600 truncate max-w-xs" title="{{ activity.description }}">
+                                <i class="fas fa-file text-slate-400 mr-2"></i>{{ activity.description }}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
+                                <i class="fas fa-book mr-1.5 text-slate-400"></i>{{ activity.project }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
+                                <i class="fas fa-bookmark mr-1.5 text-slate-400"></i>{{ activity.chapter }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4">
+                            {% if activity.category == 'Manuscript' %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
+                                {{ activity.category }}
+                            </span>
+                            {% elif activity.category == 'Art' %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-100">
+                                {{ activity.category }}
+                            </span>
+                            {% elif activity.category == 'InDesign' %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-50 text-rose-700 border border-rose-100">
+                                {{ activity.category }}
+                            </span>
+                            {% elif activity.category == 'Proof' %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-100">
+                                {{ activity.category }}
+                            </span>
+                            {% elif activity.category == 'XML' %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-cyan-50 text-cyan-700 border border-cyan-100">
+                                {{ activity.category }}
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200">
+                                {{ activity.category }}
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-right text-slate-500 text-xs">
+                            <i class="far fa-clock mr-1"></i>{{ activity.time }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="flex flex-col items-center justify-center py-12 text-slate-400">
+            <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
+                <i class="fas fa-inbox text-3xl"></i>
+            </div>
+            <p>No activities found</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Book Styler - Review</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+            background: #f4f6f9;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            margin-top: 0;
+        }
+
+        .toolbar {
+            position: sticky;
+            top: 0;
+            background: white;
+            padding: 10px 0;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th,
+        td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+        }
+
+        tr:hover {
+            background: #f1f3f5;
+        }
+
+        .text-cell {
+            max-width: 600px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        select {
+            padding: 5px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            width: 100%;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .status {
+            margin-left: 10px;
+            font-weight: bold;
+            color: #28a745;
+            display: none;
+        }
+
+        .tag-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+            color: white;
+            background: #888;
+            margin-right: 5px;
+            min-width: 30px;
+            text-align: center;
+        }
+
+        /* Style-specific colors */
+        .badge-H1 {
+            background: #d63384;
+        }
+
+        .badge-H2 {
+            background: #fd7e14;
+        }
+
+        .badge-CT {
+            background: #0d6efd;
+        }
+
+        .badge-CN {
+            background: #6610f2;
+        }
+
+        .badge-EQ {
+            background: #198754;
+        }
+
+        .badge-EPI {
+            background: #0dcaf0;
+            color: #000;
+        }
+
+        .badge-EXT {
+            background: #ffc107;
+            color: #000;
+        }
+
+        .badge-TXT {
+            background: #adb5bd;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <form id="reviewForm">
+            <div class="toolbar">
+                <div>
+                    <h1>📝 Review & Validate</h1>
+                    <span style="color: #666;">{{ filename }}</span>
+                </div>
+                <div>
+                    <span id="saveStatus" class="status">Saved!</span>
+                    <button type="button" class="btn btn-primary" onclick="saveChanges()">Save Validation</button>
+                    <button type="button" class="btn btn-success" onclick="downloadAndRedirect()"
+                        style="margin-left: 10px;">Download Final</button>
+                </div>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th width="50">ID</th>
+                        <th>Content</th>
+                        <th width="200">Current Style</th>
+                        <th width="200">Change To</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in structure %}
+                    0 <tr>
+                        <td>{{ item.id }}</td>
+                        <td class="text-cell" title="{{ item.text }}">{{ item.text }}</td>
+                        <td>
+                            <span class="tag-badge badge-{{ item.style }}">{{ item.style }}</span>
+                        </td>
+                        <td>
+                            <select name="style_{{ item.id }}" onchange="markChanged(this)">
+                                <option value="{{ item.style }}" selected>{{ item.style }} (Current)</option>
+
+                                <optgroup label="Chapter & Headings">
+                                    <option value="CN">CN</option>
+                                    <option value="CT">CT</option>
+                                    <option value="CAU">CAU</option>
+                                    <option value="H1">H1</option>
+                                    <option value="H2">H2</option>
+                                    <option value="H3">H3</option>
+                                    <option value="H4">H4</option>
+                                    <option value="H5">H5</option>
+                                    <option value="H6">H6</option>
+                                    <option value="PART">PART</option>
+                                    <option value="PAU">PAU</option>
+                                    <option value="PN">PN</option>
+                                    <option value="PT">PT</option>
+                                    <option value="ST">ST</option>
+                                    <option value="SECTION">SECTION</option>
+                                    <option value="SN">SN</option>
+                                    <option value="UNIT">UNIT</option>
+                                    <option value="UNT">UNT</option>
+                                    <option value="UT">UT</option>
+                                </optgroup>
+
+                                <optgroup label="Body Text">
+                                    <option value="TXT">TXT</option>
+                                    <option value="TXT-FLUSH">TXT-FLUSH</option>
+                                    <option value="TXT-DC">TXT-DC</option>
+                                    <option value="TXT-SPACE ABOVE">TXT-SPACE ABOVE</option>
+                                    <option value="STXT">STXT</option>
+                                    <option value="PTXT">PTXT</option>
+                                    <option value="UTXT">UTXT</option>
+                                    <option value="INT-TXT">INT-TXT</option>
+                                    <option value="INTRO">INTRO</option>
+                                </optgroup>
+
+                                <optgroup label="Lists (General)">
+                                    <option value="NL-FIRST">NL-FIRST</option>
+                                    <option value="NL-MID">NL-MID</option>
+                                    <option value="NL-LAST">NL-LAST</option>
+                                    <option value="BL-FIRST">BL-FIRST</option>
+                                    <option value="BL-MID">BL-MID</option>
+                                    <option value="BL-LAST">BL-LAST</option>
+                                    <option value="UL-FIRST">UL-FIRST</option>
+                                    <option value="UL-MID">UL-MID</option>
+                                    <option value="UL-LAST">UL-LAST</option>
+                                    <option value="MCUL-FIRST">MCUL-FIRST</option>
+                                    <option value="MCUL-MID">MCUL-MID</option>
+                                    <option value="MCUL-LAST">MCUL-LAST</option>
+                                </optgroup>
+
+                                <optgroup label="Special Elements">
+                                    <option value="EQ">EQ</option>
+                                    <option value="EQ-FIRST">EQ-FIRST</option>
+                                    <option value="EQ-MID">EQ-MID</option>
+                                    <option value="EQ-LAST">EQ-LAST</option>
+                                    <option value="EPI">EPI</option>
+                                    <option value="EPI-ATT">EPI-ATT</option>
+                                    <option value="EXT-FIRST">EXT-FIRST</option>
+                                    <option value="EXT-MID">EXT-MID</option>
+                                    <option value="EXT-LAST">EXT-LAST</option>
+                                    <option value="EXT-ONLY">EXT-ONLY</option>
+                                    <option value="QUO">QUO</option>
+                                    <option value="QUOA">QUOA</option>
+                                    <option value="FN">FN</option>
+                                </optgroup>
+
+                                <optgroup label="Figures & Tables">
+                                    <option value="FIG-LEG">FIG-LEG</option>
+                                    <option value="FIG-CRED">FIG-CRED</option>
+                                    <option value="T1">T1</option>
+                                    <option value="T2">T2</option>
+                                    <option value="T3">T3</option>
+                                    <option value="TBL">TBL</option>
+                                    <option value="TB">TB</option>
+                                    <option value="TBCH">TBCH</option>
+                                    <option value="TNL-FIRST">TNL-FIRST</option>
+                                    <option value="TNL-MID">TNL-MID</option>
+                                    <option value="TBL-MID">TBL-MID</option>
+                                    <option value="TFN">TFN</option>
+                                </optgroup>
+
+                                <optgroup label="References">
+                                    <option value="REF-H1">REF-H1</option>
+                                    <option value="REF-N">REF-N</option>
+                                    <option value="REF-U">REF-U</option>
+                                    <option value="BIBH1">BIBH1</option>
+                                    <option value="BIB">BIB</option>
+                                </optgroup>
+
+                                <optgroup label="Boxes (BX1)">
+                                    <option value="BX1-TTL">BX1-TTL</option>
+                                    <option value="BX1-TXT">BX1-TXT</option>
+                                    <option value="BX1-H1">BX1-H1</option>
+                                    <option value="BX1-H2">BX1-H2</option>
+                                    <option value="BX1-NL-MID">BX1-NL-MID</option>
+                                    <option value="BX1-BL-MID">BX1-BL-MID</option>
+                                </optgroup>
+
+                                <optgroup label="Numbered Boxes (NBX)">
+                                    <option value="NBX-TTL">NBX-TTL</option>
+                                    <option value="NBX-TXT">NBX-TXT</option>
+                                    <option value="NBX-H1">NBX-H1</option>
+                                    <option value="NBX-NL-MID">NBX-NL-MID</option>
+                                    <option value="NBX-BL-MID">NBX-BL-MID</option>
+                                </optgroup>
+
+                                <optgroup label="Exercises">
+                                    <option value="EXER-TTL">EXER-TTL</option>
+                                    <option value="EXER-H1">EXER-H1</option>
+                                    <option value="EXER-WP-NL-MID">EXER-WP-NL-MID</option>
+                                </optgroup>
+
+                                <optgroup label="Objectives">
+                                    <option value="OBJ1">OBJ1</option>
+                                    <option value="OBJ-TXT">OBJ-TXT</option>
+                                    <option value="OBJ-NL-MID">OBJ-NL-MID</option>
+                                    <option value="OBJ-BL-MID">OBJ-BL-MID</option>
+                                </optgroup>
+
+                                <optgroup label="Appendix">
+                                    <option value="APXH1">APXH1</option>
+                                    <option value="APX-TXT">APX-TXT</option>
+                                </optgroup>
+
+                                <optgroup label="Front Matter & TOC">
+                                    <option value="FM-TTL">FM-TTL</option>
+                                    <option value="FM-AU">FM-AU</option>
+                                    <option value="TOC-H1">TOC-H1</option>
+                                    <option value="TOC-H2">TOC-H2</option>
+                                    <option value="IDX-1">IDX-1</option>
+                                    <option value="IDX-2">IDX-2</option>
+                                </optgroup>
+                            </select>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </form>
+    </div>
+
+    <script>
+        const changes = {};
+
+        function markChanged(select) {
+            const rowId = select.name.split('_')[1];
+            changes[rowId] = select.value;
+            select.parentElement.parentElement.style.background = "#fff3cd"; // Highlight modified row
+        }
+
+        async function saveChanges() {
+            const btn = document.querySelector('.btn-primary');
+            const status = document.getElementById('saveStatus');
+
+            if (Object.keys(changes).length === 0) {
+                alert("No changes to save.");
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = "Saving...";
+
+            try {
+                const response = await fetch('/api/v1/files/{{ file.id }}/structuring/save', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ modifications: changes }) // Changed 'updates' to 'modifications' to match router logic if needed, or update router to match
+                });
+
+                if (response.ok) {
+                    status.style.display = "inline";
+                    setTimeout(() => status.style.display = "none", 2000);
+                    // Clear changes tracker (optional, or keep generic)
+                    changes = {};
+                } else {
+                    alert("Failed to save changes.");
+                }
+            } catch (e) {
+                console.error(e);
+                alert("Error saving: " + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Save Validation";
+            }
+        }
+
+        function downloadAndRedirect() {
+            // Trigger download - pointing to existing file download route
+            window.location.href = '/api/v1/files/{{ file.id }}/download';
+
+            // Redirect to home after short delay to allow download to start
+            setTimeout(() => {
+                window.location.href = '/projects/files/{{ file.id }}'; // Go back to file detail
+            }, 2000);
+        }
+    </script>
+</body>
+
+</html>

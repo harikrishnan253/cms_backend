@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.venv/
+venv/
+.env
+.env.*
+*.log
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+
+# Runtime / instance data
+cms.db
+data/
+ref_cache.json
+
+# Celery / misc
+celerybeat-schedule
+
+# Local runtime
+runtime/
+app/processing/legacy/ref_cache.json
+*.save
+*.save

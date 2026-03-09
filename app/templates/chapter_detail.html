@@ -1,0 +1,1178 @@
+{% extends "base_tailwind.html" %}
+
+{% block content %}
+<!-- Loading Overlay -->
+<div id="processingOverlay"
+    class="fixed inset-0 hidden items-center justify-center bg-white/80 z-[100] backdrop-blur-sm transition-opacity">
+    <div class="bg-white p-8 rounded-2xl shadow-2xl border border-slate-200 text-center">
+        <div class="flex justify-center gap-2 mb-4">
+            <div class="w-4 h-4 bg-blue-500 rounded-full animate-bounce"></div>
+            <div class="w-4 h-4 bg-blue-400 rounded-full animate-bounce delay-100"></div>
+            <div class="w-4 h-4 bg-blue-300 rounded-full animate-bounce delay-200"></div>
+        </div>
+        <h4 class="text-xl font-bold text-slate-800">Processing Document...</h4>
+        <p class="text-slate-500 mt-2 text-sm" id="processingStatus">Please wait, this may take a moment.</p>
+    </div>
+</div>
+
+<!-- Windows Explorer Style Header (Command Bar) -->
+<div class="flex-none flex items-center gap-1 px-4 py-1.5 border-b border-slate-200 bg-white z-20">
+    <div class="flex items-center gap-1 pr-4 border-r border-slate-200">
+        <button onclick="document.getElementById('uploadModal').classList.remove('hidden')"
+            class="flex items-center gap-2 px-3 py-1 hover:bg-slate-100 rounded text-sm font-medium text-slate-700 transition-colors">
+            <i class="fas fa-upload text-blue-600"></i> Upload
+            <i class="fas fa-chevron-down text-[10px] text-slate-400"></i>
+        </button>
+    </div>
+
+    <div class="flex items-center gap-1 px-2 border-r border-slate-200">
+        <button class="p-2 hover:bg-slate-100 rounded text-slate-400 cursor-not-allowed" title="Cut">
+            <i class="fas fa-cut"></i>
+        </button>
+        <button class="p-2 hover:bg-slate-100 rounded text-slate-400 cursor-not-allowed" title="Copy">
+            <i class="fas fa-copy"></i>
+        </button>
+        <button class="p-2 hover:bg-slate-100 rounded text-slate-400 cursor-not-allowed" title="Paste">
+            <i class="fas fa-paste"></i>
+        </button>
+        <button class="p-2 hover:bg-slate-100 rounded text-slate-600" title="Delete"
+            onclick="alert('Select a file to delete')">
+            <i class="fas fa-trash"></i>
+        </button>
+    </div>
+
+    <div class="flex items-center gap-1 px-2">
+        <button
+            class="flex items-center gap-2 px-3 py-1 hover:bg-slate-100 rounded text-sm font-medium text-slate-700 transition-colors">
+            <i class="fas fa-bolt text-amber-500"></i> Automate
+            <i class="fas fa-chevron-down text-[10px] text-slate-400"></i>
+        </button>
+        <button
+            class="flex items-center gap-2 px-3 py-1 hover:bg-slate-100 rounded text-sm font-medium text-slate-700 transition-colors">
+            <i class="fas fa-th-list text-blue-600"></i> View
+            <i class="fas fa-chevron-down text-[10px] text-slate-400"></i>
+        </button>
+    </div>
+</div>
+
+<!-- Address Bar (Breadcrumbs) -->
+<div class="flex-none flex items-center gap-2 px-4 py-1 bg-white border-b border-slate-200 text-sm z-10">
+    <div class="flex items-center gap-1">
+        <button onclick="window.location.href='/projects/{{ project.id }}/chapters'"
+            class="p-1.5 hover:bg-slate-100 rounded text-slate-500">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+        <button class="p-1.5 hover:bg-slate-100 rounded text-slate-400 cursor-not-allowed">
+            <i class="fas fa-arrow-right"></i>
+        </button>
+        <button onclick="window.location.reload()" class="p-1.5 hover:bg-slate-100 rounded text-slate-500">
+            <i class="fas fa-sync-alt"></i>
+        </button>
+    </div>
+
+    <div class="flex-1 flex items-center gap-2 px-3 py-1 bg-slate-50 border border-slate-200 rounded text-slate-600">
+        <i class="fas fa-folder text-amber-400"></i>
+        <div class="flex items-center gap-1">
+            <a href="/projects" class="hover:bg-slate-200 px-1.5 rounded transition-colors">Projects</a>
+            <i class="fas fa-chevron-right text-[10px] text-slate-400"></i>
+            <a href="/projects/{{ project.id }}/chapters" class="hover:bg-slate-200 px-1.5 rounded transition-colors">{{
+                project.code }}</a>
+            <i class="fas fa-chevron-right text-[10px] text-slate-400"></i>
+            <button onclick="switchTab('root')"
+                class="px-1.5 font-medium hover:bg-slate-200 rounded transition-colors text-left">Chapter {{
+                chapter.number }}</button>
+            <span id="breadcrumbCurrentFolder" class="flex items-center gap-1"></span>
+        </div>
+    </div>
+
+    <div class="relative w-64">
+        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+        <input type="text" placeholder="Search Chapter {{ chapter.number }}"
+            class="w-full pl-9 pr-3 py-1 bg-white border border-slate-200 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-400">
+    </div>
+</div>
+
+<div class="flex-1 flex overflow-hidden">
+    <!-- Navigation Pane (Left Sidebar) -->
+    <div class="w-64 border-r border-slate-200 bg-white overflow-y-auto hidden md:block">
+        <div class="p-2 space-y-0.5">
+            <div
+                class="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                Chapter Sections
+            </div>
+            <button onclick="switchTab('root')"
+                class="tab-btn w-full flex items-center gap-3 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-100 rounded transition-colors"
+                data-tab="root">
+                <i class="fas fa-folder-open text-slate-400 w-4"></i> Overview
+            </button>
+            <button onclick="switchTab('art')"
+                class="tab-btn w-full flex items-center gap-3 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-100 rounded transition-colors"
+                data-tab="art">
+                <i class="fas fa-images text-rose-500 w-4"></i> Art
+            </button>
+            <button onclick="switchTab('manuscript')"
+                class="tab-btn w-full flex items-center gap-3 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-100 rounded transition-colors"
+                data-tab="manuscript">
+                <i class="fas fa-file-word text-blue-500 w-4"></i> Manuscript
+            </button>
+            <button onclick="switchTab('indesign')"
+                class="tab-btn w-full flex items-center gap-3 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-100 rounded transition-colors"
+                data-tab="indesign">
+                <i class="fas fa-file-signature text-purple-500 w-4"></i> InDesign
+            </button>
+            <button onclick="switchTab('proof')"
+                class="tab-btn w-full flex items-center gap-3 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-100 rounded transition-colors"
+                data-tab="proof">
+                <i class="fas fa-file-pdf text-red-500 w-4"></i> Proof
+            </button>
+            <button onclick="switchTab('xml')"
+                class="tab-btn w-full flex items-center gap-3 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-100 rounded transition-colors"
+                data-tab="xml">
+                <i class="fas fa-file-code text-amber-500 w-4"></i> XML
+            </button>
+
+            <!--  <div
+                class="mt-4 flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                Related
+            </div>
+            <a href="#"
+                class="flex items-center gap-3 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-100 rounded transition-colors">
+                <i class="fas fa-images text-rose-400 w-4"></i> Art & Media
+            </a>
+            <a href="#"
+                class="flex items-center gap-3 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-100 rounded transition-colors">
+                <i class="fas fa-history text-slate-400 w-4"></i> Version History
+            </a>-->
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="flex-1 flex flex-col overflow-hidden bg-white">
+        <!-- Flash Messages -->
+        {% if request.query_params.get('msg') %}
+        <div
+            class="m-4 bg-blue-50 border border-blue-100 text-blue-700 px-4 py-2 rounded flex items-center gap-3 text-sm">
+            <i class="fas fa-info-circle"></i>
+            <span>{{ request.query_params.get('msg') }}</span>
+        </div>
+        {% endif %}
+
+        <div class="flex-1 overflow-auto">
+            <!-- Folder Root View -->
+            <div id="tab-root" class="tab-content block animate-fade-in">
+                <div class="p-8">
+                    <h2 class="text-2xl font-bold text-slate-800 mb-6 flex items-center gap-3">
+                        <i class="fas fa-folder-open text-amber-400"></i>
+                        <span>Chapter Files</span>
+                    </h2>
+                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+                        <!-- Art Folder -->
+                        <button onclick="switchTab('art')"
+                            class="group flex flex-col items-center p-6 bg-white rounded-xl shadow-sm border border-slate-200 hover:shadow-xl hover:border-blue-300 hover:-translate-y-1 transition-all duration-300">
+                            <div class="relative mb-4">
+                                <i
+                                    class="fas fa-folder text-blue-100 text-7xl transform group-hover:scale-110 transition-transform duration-300"></i>
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <i
+                                        class="fas fa-images text-blue-500 text-3xl group-hover:text-blue-600 transition-colors"></i>
+                                </div>
+                            </div>
+                            <span class="font-bold text-lg text-slate-700 group-hover:text-blue-600">Art</span>
+                            <span class="text-xs text-slate-400 mt-2 font-medium bg-slate-100 px-2 py-1 rounded-full">{{
+                                files|selectattr("category", "equalto", "Art")|list|length }} files</span>
+                        </button>
+
+                        <!-- Manuscript Folder -->
+                        <button onclick="switchTab('manuscript')"
+                            class="group flex flex-col items-center p-6 bg-white rounded-xl shadow-sm border border-slate-200 hover:shadow-xl hover:border-blue-300 hover:-translate-y-1 transition-all duration-300">
+                            <div class="relative mb-4">
+                                <i
+                                    class="fas fa-folder text-blue-100 text-7xl transform group-hover:scale-110 transition-transform duration-300"></i>
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <i
+                                        class="fas fa-file-word text-blue-500 text-3xl group-hover:text-blue-600 transition-colors"></i>
+                                </div>
+                            </div>
+                            <span class="font-bold text-lg text-slate-700 group-hover:text-blue-600">Manuscript</span>
+                            <span class="text-xs text-slate-400 mt-2 font-medium bg-slate-100 px-2 py-1 rounded-full">{{
+                                files|selectattr("category", "equalto", "Manuscript")|list|length }} files</span>
+                        </button>
+
+                        <!-- InDesign Folder -->
+                        <button onclick="switchTab('indesign')"
+                            class="group flex flex-col items-center p-6 bg-white rounded-xl shadow-sm border border-slate-200 hover:shadow-xl hover:border-blue-300 hover:-translate-y-1 transition-all duration-300">
+                            <div class="relative mb-4">
+                                <i
+                                    class="fas fa-folder text-blue-100 text-7xl transform group-hover:scale-110 transition-transform duration-300"></i>
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <i
+                                        class="fas fa-file-signature text-purple-500 text-3xl group-hover:text-purple-600 transition-colors"></i>
+                                </div>
+                            </div>
+                            <span class="font-bold text-lg text-slate-700 group-hover:text-blue-600">InDesign</span>
+                            <span class="text-xs text-slate-400 mt-2 font-medium bg-slate-100 px-2 py-1 rounded-full">{{
+                                files|selectattr("category", "equalto", "InDesign")|list|length }} files</span>
+                        </button>
+
+                        <!-- Proof Folder -->
+                        <button onclick="switchTab('proof')"
+                            class="group flex flex-col items-center p-6 bg-white rounded-xl shadow-sm border border-slate-200 hover:shadow-xl hover:border-blue-300 hover:-translate-y-1 transition-all duration-300">
+                            <div class="relative mb-4">
+                                <i
+                                    class="fas fa-folder text-blue-100 text-7xl transform group-hover:scale-110 transition-transform duration-300"></i>
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <i
+                                        class="fas fa-file-pdf text-red-500 text-3xl group-hover:text-red-600 transition-colors"></i>
+                                </div>
+                            </div>
+                            <span class="font-bold text-lg text-slate-700 group-hover:text-blue-600">Proof</span>
+                            <span class="text-xs text-slate-400 mt-2 font-medium bg-slate-100 px-2 py-1 rounded-full">{{
+                                files|selectattr("category", "equalto", "Proof")|list|length }} files</span>
+                        </button>
+
+                        <!-- XML Folder -->
+                        <button onclick="switchTab('xml')"
+                            class="group flex flex-col items-center p-6 bg-white rounded-xl shadow-sm border border-slate-200 hover:shadow-xl hover:border-blue-300 hover:-translate-y-1 transition-all duration-300">
+                            <div class="relative mb-4">
+                                <i
+                                    class="fas fa-folder text-blue-100 text-7xl transform group-hover:scale-110 transition-transform duration-300"></i>
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <i
+                                        class="fas fa-file-code text-amber-500 text-3xl group-hover:text-amber-600 transition-colors"></i>
+                                </div>
+                            </div>
+                            <span class="font-bold text-lg text-slate-700 group-hover:text-blue-600">XML</span>
+                            <span class="text-xs text-slate-400 mt-2 font-medium bg-slate-100 px-2 py-1 rounded-full">{{
+                                files|selectattr("category", "equalto", "XML")|list|length }} files</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Art Tab -->
+            <div id="tab-art" class="tab-content hidden">
+                <div id="gridViewContainerArt"
+                    class="p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
+                    {% for file in files if file.category == 'Art' %}
+                    <div class="group flex flex-col items-center p-2 rounded hover:bg-blue-50 hover:outline hover:outline-1 hover:outline-blue-200 transition-all cursor-pointer relative"
+                        oncontextmenu="event.preventDefault(); toggleDropdown('action-{{ file.id }}');">
+
+                        <!-- Context Menu (Same as manuscript) -->
+                        <div id="action-{{ file.id }}"
+                            class="hidden fixed w-64 bg-white rounded shadow-2xl border border-slate-200 z-[100] py-1 text-left">
+                            <a href="/projects/files/{{ file.id }}/download"
+                                class="w-full text-left px-4 py-1.5 text-sm text-slate-700 hover:bg-blue-600 hover:text-white flex items-center gap-3">
+                                <i class="fas fa-download w-4"></i> Download
+                            </a>
+                            <div class="border-t border-slate-100 my-1"></div>
+                            <form action="/projects/files/{{ file.id }}/delete" method="post"
+                                onsubmit="return confirm('Delete {{ file.filename }} permanently?');">
+                                <button type="submit"
+                                    class="w-full text-left px-4 py-1.5 text-sm text-rose-600 hover:bg-rose-600 hover:text-white flex items-center gap-3">
+                                    <i class="fas fa-trash w-4"></i> Delete
+                                </button>
+                            </form>
+                        </div>
+
+                        <div class="w-16 h-16 flex items-center justify-center relative mb-1">
+                            <i class="fas fa-file-image text-rose-600 text-5xl"></i>
+                        </div>
+                        <span
+                            class="text-xs text-center text-slate-800 break-words w-full px-1 line-clamp-2 leading-tight">{{
+                            file.filename }}</span>
+                    </div>
+                    {% else %}
+                    <div class="col-span-full flex flex-col items-center justify-center py-12 text-slate-400">
+                        <i class="fas fa-folder-open text-6xl mb-4 opacity-20"></i>
+                        <p>No Art files in this folder.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Manuscript Tab -->
+            <div id="tab-manuscript" class="tab-content hidden">
+                <!-- Grid View (Default) -->
+                <div id="gridViewContainer"
+                    class="p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
+                    {% for file in files if file.category == 'Manuscript' %}
+                    <div class="group flex flex-col items-center p-2 rounded hover:bg-blue-50 hover:outline hover:outline-1 hover:outline-blue-200 transition-all cursor-pointer relative"
+                        oncontextmenu="event.preventDefault(); toggleDropdown('action-{{ file.id }}');">
+
+                        <!-- Context Menu -->
+                        <div id="action-{{ file.id }}"
+                            class="hidden fixed w-64 bg-white rounded shadow-2xl border border-slate-200 z-[100] py-1 text-left">
+                            <!-- Edit in Browser (New) -->
+                            {% if file.filename.lower().endswith('.docx') %}
+                            <a href="/files/{{ file.id }}/edit"
+                                class="w-full text-left px-4 py-1.5 text-sm text-slate-700 hover:bg-blue-600 hover:text-white flex items-center gap-3">
+                                <i class="fas fa-edit w-4 text-blue-500"></i> Edit in Browser
+                            </a>
+                            <div class="border-t border-slate-100 my-1"></div>
+                            {% endif %}
+
+                            <a href="/projects/files/{{ file.id }}/download"
+                                class="w-full text-left px-4 py-1.5 text-sm text-slate-700 hover:bg-blue-600 hover:text-white flex items-center gap-3">
+                                <i class="fas fa-download w-4"></i> Download
+                            </a>
+
+                            {% if file.filename.lower().endswith('.docx') %}
+                            <div class="border-t border-slate-100 my-1"></div>
+                            <div class="px-4 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                Processing</div>
+
+                            {% if 'Editor' in user.roles or 'CopyEditor' in user.roles or 'Admin' in user.roles %}
+                            <button onclick="runAllProcesses(event, '{{ file.id }}')"
+                                class="w-full text-left px-4 py-1.5 text-sm text-slate-700 hover:bg-emerald-600 hover:text-white flex items-center gap-3">
+                                <i class="fas fa-play-circle w-4 text-emerald-500 hover:text-white"></i> Run All
+                                Processes
+                            </button>
+                            <div class="border-t border-slate-100 my-1"></div>
+
+                            <button onclick="runProcess(event, this)" data-file-id="{{ file.id }}"
+                                data-process-type="language"
+                                class="w-full text-left px-4 py-1.5 text-sm text-slate-700 hover:bg-blue-600 hover:text-white flex items-center gap-3">
+                                <i class="fas fa-pen-nib w-4 text-blue-500"></i> Language Edit
+                            </button>
+                            <a href="/files/{{ file.id }}/technical/edit"
+                                class="w-full text-left px-4 py-1.5 text-sm text-slate-700 hover:bg-blue-600 hover:text-white flex items-center gap-3">
+                                <i class="fas fa-cogs w-4 text-slate-500"></i> Technical Edit
+                            </a>
+                            <button
+                                onclick="document.getElementById('refCheckModal{{ file.id }}').classList.remove('hidden')"
+                                class="w-full text-left px-4 py-1.5 text-sm text-slate-700 hover:bg-blue-600 hover:text-white flex items-center gap-3">
+                                <i class="fas fa-book w-4 text-emerald-500"></i> Reference Check
+                            </button>
+                            <button
+                                onclick="document.getElementById('structuringModal{{ file.id }}').classList.remove('hidden')"
+                                class="w-full text-left px-4 py-1.5 text-sm text-slate-700 hover:bg-blue-600 hover:text-white flex items-center gap-3">
+                                <i class="fas fa-layer-group w-4 text-purple-500"></i> Structuring
+                            </button>
+                            {% endif %}
+
+                            {% if 'PPD' in user.roles or 'ProjectManager' in user.roles or 'Admin' in user.roles %}
+                            <button onclick="runProcess(event, this)" data-file-id="{{ file.id }}"
+                                data-process-type="ppd"
+                                class="w-full text-left px-4 py-1.5 text-sm text-slate-700 hover:bg-blue-600 hover:text-white flex items-center gap-3">
+                                <i class="fas fa-file-export w-4 text-amber-500"></i> PPD Generation
+                            </button>
+                            {% endif %}
+
+                            {% if 'PermissionsManager' in user.roles or 'ProjectManager' in user.roles or 'Admin' in
+                            user.roles %}
+                            <button onclick="runProcess(event, this)" data-file-id="{{ file.id }}"
+                                data-process-type="permissions"
+                                class="w-full text-left px-4 py-1.5 text-sm text-slate-700 hover:bg-blue-600 hover:text-white flex items-center gap-3">
+                                <i class="fas fa-shield-alt w-4 text-rose-500"></i> Permissions Check
+                            </button>
+                            <button onclick="runProcess(event, this)" data-file-id="{{ file.id }}"
+                                data-process-type="credit_extractor_ai"
+                                class="w-full text-left px-4 py-1.5 text-sm text-slate-700 hover:bg-blue-600 hover:text-white flex items-center gap-3">
+                                <i class="fas fa-robot w-4 text-emerald-500"></i> AI Credit Extraction
+                            </button>
+                            {% endif %}
+
+                            {% if 'Editor' in user.roles or 'CopyEditor' in user.roles or 'Admin' in user.roles or
+                            'ProjectManager' in user.roles %}
+                            <button onclick="runProcess(event, this)" data-file-id="{{ file.id }}"
+                                data-process-type="bias_scan"
+                                class="w-full text-left px-4 py-1.5 text-sm text-slate-700 hover:bg-blue-600 hover:text-white flex items-center gap-3">
+                                <i class="fas fa-eye w-4 text-indigo-500"></i> Bias Scan
+                            </button>
+                            {% endif %}
+
+                            {% if 'PPD' in user.roles or 'Admin' in user.roles or 'ProjectManager' in user.roles %}
+                            <button onclick="runProcess(event, this)" data-file-id="{{ file.id }}"
+                                data-process-type="word_to_xml"
+                                class="w-full text-left px-4 py-1.5 text-sm text-slate-700 hover:bg-blue-600 hover:text-white flex items-center gap-3">
+                                <i class="fas fa-file-code w-4 text-amber-500"></i> Word to XML
+                            </button>
+                            {% endif %}
+                            {% endif %}
+
+                            <div class="border-t border-slate-100 my-1"></div>
+                            <div class="px-4 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                Checkout</div>
+                            {% if not file.is_checked_out %}
+                            <form action="/projects/files/{{ file.id }}/checkout" method="post"
+                                onsubmit="return confirm('Check out {{ file.filename }}?');">
+                                <button type="submit"
+                                    class="w-full text-left px-4 py-1.5 text-sm text-slate-700 hover:bg-blue-600 hover:text-white flex items-center gap-3">
+                                    <i class="fas fa-sign-out-alt w-4"></i> Check Out
+                                </button>
+                            </form>
+                            {% endif %}
+
+                            {% if file.is_checked_out and file.checked_out_by_id == user.id %}
+                            <button
+                                onclick="document.getElementById('checkInModal{{ file.id }}').classList.remove('hidden')"
+                                class="w-full text-left px-4 py-1.5 text-sm text-slate-700 hover:bg-blue-600 hover:text-white flex items-center gap-3">
+                                <i class="fas fa-sign-in-alt w-4 text-green-600"></i> Check In
+                            </button>
+                            <form action="/projects/files/{{ file.id }}/cancel_checkout" method="post"
+                                onsubmit="return confirm('Cancel checkout?');">
+                                <button type="submit"
+                                    class="w-full text-left px-4 py-1.5 text-sm text-slate-700 hover:bg-blue-600 hover:text-white flex items-center gap-3">
+                                    <i class="fas fa-times-circle w-4 text-rose-500"></i> Cancel Checkout
+                                </button>
+                            </form>
+                            {% endif %}
+
+                            {% if not file.is_checked_out or file.checked_out_by_id == user.id %}
+                            <div class="border-t border-slate-100 my-1"></div>
+                            <form action="/projects/files/{{ file.id }}/delete" method="post"
+                                onsubmit="return confirm('Delete {{ file.filename }} permanently?');">
+                                <button type="submit"
+                                    class="w-full text-left px-4 py-1.5 text-sm text-rose-600 hover:bg-rose-600 hover:text-white flex items-center gap-3">
+                                    <i class="fas fa-trash w-4"></i> Delete
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+
+                        <div class="w-16 h-16 flex items-center justify-center relative mb-1">
+                            {% if file.filename.lower().endswith('.docx') or file.filename.lower().endswith('.doc')
+                            %}
+                            <i class="fas fa-file-word text-blue-600 text-5xl"></i>
+                            {% elif file.filename.lower().endswith('.pdf') %}
+                            <i class="fas fa-file-pdf text-rose-600 text-5xl"></i>
+                            {% elif file.filename.lower().endswith('.indd') %}
+                            <i class="fas fa-file-image text-purple-600 text-5xl"></i>
+                            {% elif file.filename.lower().endswith('.xml') %}
+                            <i class="fas fa-file-code text-amber-600 text-5xl"></i>
+                            {% else %}
+                            <i class="fas fa-file text-slate-400 text-5xl"></i>
+                            {% endif %}
+
+                            {% if file.is_checked_out %}
+                            <div
+                                class="absolute bottom-0 right-0 bg-white rounded-full p-0.5 shadow-sm border border-slate-200">
+                                {% if file.checked_out_by_id == user.id %}
+                                <i class="fas fa-user-check text-amber-500 text-[10px]"></i>
+                                {% else %}
+                                <i class="fas fa-lock text-rose-500 text-[10px]"></i>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <span
+                            class="text-xs text-center text-slate-800 break-words w-full px-1 line-clamp-2 leading-tight">{{
+                            file.filename }}</span>
+                        {% if file.is_checked_out %}
+                        <span
+                            class="text-[8px] font-bold uppercase tracking-tighter {% if file.checked_out_by_id == user.id %}text-amber-600{% else %}text-rose-600{% endif %} mt-1">
+                            {% if file.checked_out_by_id == user.id %}Checked Out{% else %}Locked{% endif %}
+                        </span>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <div class="col-span-full flex flex-col items-center justify-center py-12 text-slate-400">
+                        <i class="fas fa-folder-open text-6xl mb-4 opacity-20"></i>
+                        <p>No files in this folder.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- List View (Hidden by default) -->
+                <div id="listViewContainer" class="hidden">
+
+                    <table class="w-full text-left text-sm border-collapse">
+                        <thead class="sticky top-0 bg-white border-b border-slate-200">
+                            <tr class="text-slate-500 font-normal">
+                                <th class="px-4 py-2 font-normal border-r border-slate-100 w-1/3">Name</th>
+                                <th class="px-4 py-2 font-normal border-r border-slate-100">Date modified</th>
+                                <th class="px-4 py-2 font-normal border-r border-slate-100">Type</th>
+                                <th class="px-4 py-2 font-normal border-r border-slate-100">Size</th>
+                                <th class="px-4 py-2 font-normal text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-50">
+                            {% for file in files if file.category == 'Manuscript' %}
+                            <tr class="hover:bg-blue-50 group cursor-pointer"
+                                oncontextmenu="event.preventDefault(); toggleDropdown('list-action-{{ file.id }}');">
+                                <td class="px-4 py-1 flex items-center gap-3 whitespace-nowrap">
+                                    {% if file.filename.lower().endswith('.docx') %}<i
+                                        class="fas fa-file-word text-blue-600"></i>
+                                    {% elif file.filename.lower().endswith('.pdf') %}<i
+                                        class="fas fa-file-pdf text-rose-600"></i>
+                                    {% else %}<i class="fas fa-file text-slate-400"></i>{% endif %}
+                                    <span class="text-slate-800">{{ file.filename }}</span>
+                                </td>
+                                <td class="px-4 py-1 text-slate-500 whitespace-nowrap">{{
+                                    file.uploaded_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                <td class="px-4 py-1 text-slate-500 whitespace-nowrap">
+                                    {% if file.filename.lower().endswith('.docx') %}Microsoft Word Document
+                                    {% elif file.filename.lower().endswith('.doc') %}Microsoft Word Document
+                                    {% elif file.filename.lower().endswith('.pdf') %}Adobe Acrobat Document
+                                    {% elif file.filename.lower().endswith('.indd') %}InDesign Document
+                                    {% elif file.filename.lower().endswith('.xml') %}XML Document
+                                    {% else %}File{% endif %}
+                                </td>
+                                <td class="px-4 py-1 text-slate-500 whitespace-nowrap">
+                                    24 KB
+                                </td>
+                                <td class="px-4 py-1 text-right relative">
+                                    <button onclick="toggleDropdown('list-action-{{ file.id }}')"
+                                        class="p-1 hover:bg-slate-200 rounded transition-colors">
+                                        <i class="fas fa-ellipsis-v text-slate-400"></i>
+                                    </button>
+
+                                    <!-- Context Menu for List View -->
+                                    <div id="list-action-{{ file.id }}"
+                                        class="hidden fixed w-64 bg-white rounded shadow-2xl border border-slate-200 z-[100] py-1 text-left right-0 top-8">
+
+                                        <!-- Edit in Browser (New) -->
+                                        {% if file.filename.lower().endswith('.docx') %}
+                                        <a href="/files/{{ file.id }}/edit"
+                                            class="w-full text-left px-4 py-1.5 text-sm text-slate-700 hover:bg-blue-600 hover:text-white flex items-center gap-3">
+                                            <i class="fas fa-edit w-4 text-blue-500"></i> Edit in Browser
+                                        </a>
+                                        <div class="border-t border-slate-100 my-1"></div>
+                                        {% endif %}
+
+                                        <a href="/projects/files/{{ file.id }}/download"
+                                            class="w-full text-left px-4 py-1.5 text-sm text-slate-700 hover:bg-blue-600 hover:text-white flex items-center gap-3">
+                                            <i class="fas fa-download w-4"></i> Download
+                                        </a>
+                                        {% if file.filename.lower().endswith('.docx') %}
+                                        <div class="border-t border-slate-100 my-1"></div>
+                                        {% if 'Editor' in user.roles or 'CopyEditor' in user.roles or 'Admin' in
+                                        user.roles %}
+                                        <button onclick="runAllProcesses(event, '{{ file.id }}')"
+                                            class="w-full text-left px-4 py-1.5 text-sm text-slate-700 hover:bg-emerald-600 hover:text-white flex items-center gap-3">
+                                            <i class="fas fa-play-circle w-4 text-emerald-500 hover:text-white"></i> Run
+                                            All Processes
+                                        </button>
+                                        <div class="border-t border-slate-100 my-1"></div>
+
+                                        <button onclick="runProcess(event, this)" data-file-id="{{ file.id }}"
+                                            data-process-type="language"
+                                            class="w-full text-left px-4 py-1.5 text-sm text-slate-700 hover:bg-blue-600 hover:text-white flex items-center gap-3">
+                                            <i class="fas fa-pen-nib w-4 text-blue-500"></i> Language Edit
+                                        </button>
+                                        <a href="/files/{{ file.id }}/technical/edit"
+                                            class="w-full text-left px-4 py-1.5 text-sm text-slate-700 hover:bg-blue-600 hover:text-white flex items-center gap-3">
+                                            <i class="fas fa-cogs w-4 text-slate-500"></i> Technical Edit
+                                        </a>
+                                        <button onclick="runProcess(event, this)" data-file-id="{{ file.id }}"
+                                            data-process-type="bias_scan"
+                                            class="w-full text-left px-4 py-1.5 text-sm text-slate-700 hover:bg-blue-600 hover:text-white flex items-center gap-3">
+                                            <i class="fas fa-eye w-4 text-indigo-500"></i> Bias Scan
+                                        </button>
+                                        {% endif %}
+
+                                        {% if 'PermissionsManager' in user.roles or 'ProjectManager' in user.roles or
+                                        'Admin' in user.roles %}
+                                        <button onclick="runProcess(event, this)" data-file-id="{{ file.id }}"
+                                            data-process-type="credit_extractor_ai"
+                                            class="w-full text-left px-4 py-1.5 text-sm text-slate-700 hover:bg-blue-600 hover:text-white flex items-center gap-3">
+                                            <i class="fas fa-robot w-4 text-emerald-500"></i> AI Credit Extraction
+                                        </button>
+                                        {% endif %}
+
+                                        {% if 'PPD' in user.roles or 'Admin' in user.roles or 'ProjectManager' in
+                                        user.roles %}
+                                        <button onclick="runProcess(event, this)" data-file-id="{{ file.id }}"
+                                            data-process-type="word_to_xml"
+                                            class="w-full text-left px-4 py-1.5 text-sm text-slate-700 hover:bg-blue-600 hover:text-white flex items-center gap-3">
+                                            <i class="fas fa-file-code w-4 text-amber-500"></i> Word to XML
+                                        </button>
+                                        {% endif %}
+                                        {% endif %}
+                                        <div class="border-t border-slate-100 my-1"></div>
+                                        <div
+                                            class="px-4 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                            Checked Out: {{ 'Yes' if file.is_checked_out else 'No' }}</div>
+                                        <div
+                                            class="px-4 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                            Version: v{{ file.version }}</div>
+                                        <div class="border-t border-slate-100 my-1"></div>
+                                        <form action="/projects/files/{{ file.id }}/delete" method="post"
+                                            onsubmit="return confirm('Delete file?');">
+                                            <button type="submit"
+                                                class="w-full text-left px-4 py-1.5 text-sm text-rose-600 hover:bg-rose-600 hover:text-white flex items-center gap-3">
+                                                <i class="fas fa-trash w-4"></i> Delete
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- InDesign Tab -->
+            <div id="tab-indesign" class="tab-content hidden">
+                <div id="gridViewContainerInDesign"
+                    class="p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
+                    {% for file in files if file.category == 'InDesign' %}
+                    <div class="group flex flex-col items-center p-2 rounded hover:bg-blue-50 hover:outline hover:outline-1 hover:outline-blue-200 transition-all cursor-pointer relative"
+                        oncontextmenu="event.preventDefault(); toggleDropdown('action-{{ file.id }}');">
+
+                        <!-- Context Menu (Basic for InDesign) -->
+                        <div id="action-{{ file.id }}"
+                            class="hidden fixed w-64 bg-white rounded shadow-2xl border border-slate-200 z-[100] py-1 text-left">
+                            <a href="/projects/files/{{ file.id }}/download"
+                                class="w-full text-left px-4 py-1.5 text-sm text-slate-700 hover:bg-blue-600 hover:text-white flex items-center gap-3">
+                                <i class="fas fa-download w-4"></i> Download
+                            </a>
+                            <div class="border-t border-slate-100 my-1"></div>
+                            <form action="/projects/files/{{ file.id }}/delete" method="post"
+                                onsubmit="return confirm('Delete {{ file.filename }} permanently?');">
+                                <button type="submit"
+                                    class="w-full text-left px-4 py-1.5 text-sm text-rose-600 hover:bg-rose-600 hover:text-white flex items-center gap-3">
+                                    <i class="fas fa-trash w-4"></i> Delete
+                                </button>
+                            </form>
+                        </div>
+
+                        <div class="w-16 h-16 flex items-center justify-center relative mb-1">
+                            <i class="fas fa-file-image text-purple-600 text-5xl"></i>
+                        </div>
+                        <span
+                            class="text-xs text-center text-slate-800 break-words w-full px-1 line-clamp-2 leading-tight">{{
+                            file.filename }}</span>
+                    </div>
+                    {% else %}
+                    <div class="col-span-full flex flex-col items-center justify-center py-12 text-slate-400">
+                        <i class="fas fa-folder-open text-6xl mb-4 opacity-20"></i>
+                        <p>No InDesign files in this folder.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- XML Tab -->
+            <div id="tab-xml" class="tab-content hidden">
+                <div id="gridViewContainerXML"
+                    class="p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
+                    {% for file in files if file.category == 'XML' %}
+                    <div class="group flex flex-col items-center p-2 rounded hover:bg-blue-50 hover:outline hover:outline-1 hover:outline-blue-200 transition-all cursor-pointer relative"
+                        oncontextmenu="event.preventDefault(); toggleDropdown('action-{{ file.id }}');">
+
+                        <!-- Context Menu (Basic for XML) -->
+                        <div id="action-{{ file.id }}"
+                            class="hidden fixed w-64 bg-white rounded shadow-2xl border border-slate-200 z-[100] py-1 text-left">
+                            <a href="/projects/files/{{ file.id }}/download"
+                                class="w-full text-left px-4 py-1.5 text-sm text-slate-700 hover:bg-blue-600 hover:text-white flex items-center gap-3">
+                                <i class="fas fa-download w-4"></i> Download
+                            </a>
+                            <div class="border-t border-slate-100 my-1"></div>
+                            <form action="/projects/files/{{ file.id }}/delete" method="post"
+                                onsubmit="return confirm('Delete {{ file.filename }} permanently?');">
+                                <button type="submit"
+                                    class="w-full text-left px-4 py-1.5 text-sm text-rose-600 hover:bg-rose-600 hover:text-white flex items-center gap-3">
+                                    <i class="fas fa-trash w-4"></i> Delete
+                                </button>
+                            </form>
+                        </div>
+
+                        <div class="w-16 h-16 flex items-center justify-center relative mb-1">
+                            <i class="fas fa-file-code text-amber-500 text-5xl"></i>
+                        </div>
+                        <span
+                            class="text-xs text-center text-slate-800 break-words w-full px-1 line-clamp-2 leading-tight">{{
+                            file.filename }}</span>
+                    </div>
+                    {% else %}
+                    <div class="col-span-full flex flex-col items-center justify-center py-12 text-slate-400">
+                        <i class="fas fa-folder-open text-6xl mb-4 opacity-20"></i>
+                        <p>No XML files in this folder.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Proof Tab -->
+            <div id="tab-proof" class="tab-content hidden">
+                <div id="gridViewContainerProof"
+                    class="p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
+                    {% for file in files if file.category == 'Proof' %}
+                    <div class="group flex flex-col items-center p-2 rounded hover:bg-blue-50 hover:outline hover:outline-1 hover:outline-blue-200 transition-all cursor-pointer relative"
+                        oncontextmenu="event.preventDefault(); toggleDropdown('action-{{ file.id }}');">
+
+                        <!-- Context Menu -->
+                        <div id="action-{{ file.id }}"
+                            class="hidden fixed w-64 bg-white rounded shadow-2xl border border-slate-200 z-[100] py-1 text-left">
+                            <a href="/projects/files/{{ file.id }}/download"
+                                class="w-full text-left px-4 py-1.5 text-sm text-slate-700 hover:bg-blue-600 hover:text-white flex items-center gap-3">
+                                <i class="fas fa-download w-4"></i> Download
+                            </a>
+                            <div class="border-t border-slate-100 my-1"></div>
+                            <form action="/projects/files/{{ file.id }}/delete" method="post"
+                                onsubmit="return confirm('Delete {{ file.filename }} permanently?');">
+                                <button type="submit"
+                                    class="w-full text-left px-4 py-1.5 text-sm text-rose-600 hover:bg-rose-600 hover:text-white flex items-center gap-3">
+                                    <i class="fas fa-trash w-4"></i> Delete
+                                </button>
+                            </form>
+                        </div>
+
+                        <div class="w-16 h-16 flex items-center justify-center relative mb-1">
+                            <i class="fas fa-file-pdf text-rose-600 text-5xl"></i>
+                        </div>
+                        <span
+                            class="text-xs text-center text-slate-800 break-words w-full px-1 line-clamp-2 leading-tight">{{
+                            file.filename }}</span>
+                    </div>
+                    {% else %}
+                    <div class="col-span-full flex flex-col items-center justify-center py-12 text-slate-400">
+                        <i class="fas fa-folder-open text-6xl mb-4 opacity-20"></i>
+                        <p>No Proof files in this folder.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Bar -->
+        <div class="h-6 bg-slate-100 border-t border-slate-200 flex items-center px-4 text-[10px] text-slate-500 gap-4">
+            <div class="flex items-center gap-1">
+                <i class="fas fa-file-alt"></i>
+                <span>{{ files|length }} item(s)</span>
+            </div>
+            <div class="h-3 w-px bg-slate-300"></div>
+            <div class="flex items-center gap-1">
+                <i class="fas fa-shield-alt"></i>
+                <span>Zone: Trusted</span>
+            </div>
+            <div class="flex-1"></div>
+            <div class="flex items-center gap-3">
+                <button onclick="setGridView(true)" class="hover:text-blue-600"><i class="fas fa-th-large"></i></button>
+                <button onclick="setGridView(false)" class="hover:text-blue-600"><i class="fas fa-list"></i></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Upload Modal -->
+<div id="uploadModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden modal-overlay">
+    <div class="bg-white rounded-2xl w-full max-w-md m-4 p-6 shadow-2xl">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-xl font-bold text-slate-800">Upload File</h3>
+            <button onclick="document.getElementById('uploadModal').classList.add('hidden')"
+                class="p-2 hover:bg-slate-100 rounded-full text-slate-500 transition-colors">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <form action="/projects/{{ project.id }}/chapter/{{ chapter.id }}/upload" method="post"
+            enctype="multipart/form-data">
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Select File(s)</label>
+                    <input type="file" name="files" multiple required
+                        class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Category</label>
+                    <select name="category" id="uploadCategorySelect"
+                        class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        <option value="Art">Art</option>
+                        <option value="Manuscript">Manuscript</option>
+                        <option value="InDesign">InDesign</option>
+                        <option value="Proof">Proof</option>
+                        <option value="XML">XML</option>
+                    </select>
+                </div>
+            </div>
+            <div class="flex justify-end gap-3 mt-8">
+                <button type="button" onclick="document.getElementById('uploadModal').classList.add('hidden')"
+                    class="px-4 py-2 text-slate-600 font-medium hover:bg-slate-100 rounded-lg transition-colors">Cancel</button>
+                <button type="submit"
+                    class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg transition-colors shadow-sm">Upload</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% for file in files %}
+<!-- Reference Check Modal -->
+{% if file.filename.lower().endswith('.docx') %}
+<div id="refCheckModal{{ file.id }}"
+    class="fixed inset-0 bg-black/50 flex items-center justify-center z-[1050] hidden modal-overlay">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-md m-4 overflow-hidden">
+        <div class="bg-slate-50 border-b border-slate-200 px-6 py-4 flex justify-between items-center">
+            <h5 class="font-bold text-slate-800">Reference Check Options</h5>
+            <button type="button" class="text-slate-400 hover:text-slate-600 transition-colors"
+                onclick="document.getElementById('refCheckModal{{ file.id }}').classList.add('hidden')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="p-6">
+            <div class="flex flex-col gap-3">
+                <label
+                    class="flex items-center gap-3 p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors">
+                    <input
+                        class="w-4 h-4 text-emerald-600 border-slate-300 rounded focus:ring-emerald-500 ref-check-input"
+                        type="checkbox" value="reference_number_validation">
+                    <span class="text-sm font-medium text-slate-700">Number Validation</span>
+                </label>
+                <label
+                    class="flex items-center gap-3 p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors">
+                    <input
+                        class="w-4 h-4 text-emerald-600 border-slate-300 rounded focus:ring-emerald-500 ref-check-input"
+                        type="checkbox" value="reference_apa_chicago_validation">
+                    <span class="text-sm font-medium text-slate-700">Name & Year (APA/Chicago)</span>
+                </label>
+                <label
+                    class="flex items-center gap-3 p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors">
+                    <input
+                        class="w-4 h-4 text-emerald-600 border-slate-300 rounded focus:ring-emerald-500 ref-check-input"
+                        type="checkbox" value="reference_report_only">
+                    <span class="text-sm font-medium text-slate-700">Report Only</span>
+                </label>
+                <label
+                    class="flex items-center gap-3 p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors">
+                    <input
+                        class="w-4 h-4 text-emerald-600 border-slate-300 rounded focus:ring-emerald-500 ref-check-input"
+                        type="checkbox" value="reference_structuring">
+                    <span class="text-sm font-medium text-slate-700">Structuring (Post-Validation)</span>
+                </label>
+            </div>
+        </div>
+        <div class="bg-slate-50 border-t border-slate-200 px-6 py-4 flex justify-end gap-3">
+            <button type="button"
+                class="px-4 py-2 text-slate-600 font-medium hover:bg-slate-200 rounded-lg transition-colors"
+                onclick="document.getElementById('refCheckModal{{ file.id }}').classList.add('hidden')">Close</button>
+            <button type="button"
+                class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg transition-colors shadow-sm"
+                onclick="runMultipleReferenceChecks('{{ file.id }}')">Run Checks</button>
+        </div>
+    </div>
+</div>
+
+<!-- Structuring Modal -->
+<div id="structuringModal{{ file.id }}"
+    class="fixed inset-0 bg-black/50 flex items-center justify-center z-[1050] hidden modal-overlay">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-md m-4 overflow-hidden">
+        <div class="bg-slate-50 border-b border-slate-200 px-6 py-4 flex justify-between items-center">
+            <h5 class="font-bold text-slate-800">Structuring Options</h5>
+            <button type="button" class="text-slate-400 hover:text-slate-600 transition-colors"
+                onclick="document.getElementById('structuringModal{{ file.id }}').classList.add('hidden')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="p-6">
+            <div class="flex flex-col gap-3">
+                <div
+                    class="flex items-center gap-3 p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors">
+                    <input class="w-4 h-4 text-purple-600 border-slate-300 focus:ring-purple-500" type="radio"
+                        name="structMode{{ file.id }}" value="style" checked>
+                    <span class="text-sm font-medium text-slate-700">Apply Styles & Validate</span>
+                </div>
+                <div
+                    class="flex items-center gap-3 p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors">
+                    <input class="w-4 h-4 text-purple-600 border-slate-300 focus:ring-purple-500" type="radio"
+                        name="structMode{{ file.id }}" value="tag">
+                    <span class="text-sm font-medium text-slate-700">Add Tags Only</span>
+                </div>
+            </div>
+        </div>
+        <div class="bg-slate-50 border-t border-slate-200 px-6 py-4 flex justify-end gap-3">
+            <button type="button"
+                class="px-4 py-2 text-slate-600 font-medium hover:bg-slate-200 rounded-lg transition-colors"
+                onclick="document.getElementById('structuringModal{{ file.id }}').classList.add('hidden')">Close</button>
+            <button type="button"
+                class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors shadow-sm"
+                onclick="runStructuring('{{ file.id }}')">Run Structuring</button>
+        </div>
+    </div>
+</div>
+
+<!-- Check In Modal -->
+<div id="checkInModal{{ file.id }}"
+    class="fixed inset-0 bg-black/50 flex items-center justify-center z-[1050] hidden modal-overlay">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-md m-4 overflow-hidden">
+        <div class="bg-slate-50 border-b border-slate-200 px-6 py-4 flex justify-between items-center">
+            <h5 class="font-bold text-slate-800">Check In File</h5>
+            <button type="button" class="text-slate-400 hover:text-slate-600 transition-colors"
+                onclick="document.getElementById('checkInModal{{ file.id }}').classList.add('hidden')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <form action="/projects/{{ project.id }}/chapter/{{ chapter.id }}/upload" method="post"
+            enctype="multipart/form-data">
+            <div class="p-6 space-y-4">
+                <p class="text-sm text-slate-600">Please upload your modified version of <strong>{{ file.filename
+                        }}</strong>. Ensure the filename remains exactly the same to properly check it back in.</p>
+                <div>
+                    <input type="file" name="files" required
+                        class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100">
+                </div>
+                <input type="hidden" name="category" value="{{ file.category }}">
+            </div>
+            <div class="bg-slate-50 border-t border-slate-200 px-6 py-4 flex justify-end gap-3">
+                <button type="button"
+                    class="px-4 py-2 text-slate-600 font-medium hover:bg-slate-200 rounded-lg transition-colors"
+                    onclick="document.getElementById('checkInModal{{ file.id }}').classList.add('hidden')">Cancel</button>
+                <button type="submit"
+                    class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg transition-colors shadow-sm">Check
+                    In</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+{% endfor %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Tab Switching Logic
+    function switchTab(tabName) {
+        // Hide all contents
+        document.querySelectorAll('.tab-content').forEach(el => {
+            el.classList.add('hidden');
+            el.classList.remove('block');
+        });
+
+        // Show selected content
+        const selectedContent = document.getElementById('tab-' + tabName);
+        if (selectedContent) {
+            selectedContent.classList.remove('hidden');
+            selectedContent.classList.add('block');
+        }
+
+        // Update buttons (Sidebar style)
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            if (btn.dataset.tab === tabName) {
+                btn.classList.add('bg-blue-50', 'border-blue-500', 'text-slate-900');
+                btn.classList.remove('hover:bg-slate-100', 'text-slate-700', 'border-transparent');
+                btn.classList.add('border-l-2');
+            } else {
+                btn.classList.remove('bg-blue-50', 'border-blue-500', 'text-slate-900');
+                btn.classList.add('hover:bg-slate-100', 'text-slate-700', 'border-transparent');
+                btn.classList.remove('border-l-2');
+            }
+        });
+
+        // Set default category in upload modal to match current tab
+        const categorySelect = document.getElementById('uploadCategorySelect');
+        if (categorySelect && tabName !== 'root') {
+            // Map tab names to actual category values (capitalize first letter)
+            const categoryValue = tabName.charAt(0).toUpperCase() + tabName.slice(1);
+            categorySelect.value = categoryValue;
+        }
+
+        // Update Breadcrumb
+        const breadcrumbLabel = document.getElementById('breadcrumbCurrentFolder');
+        if (breadcrumbLabel) {
+            if (tabName === 'root') {
+                breadcrumbLabel.innerHTML = '';
+            } else {
+                breadcrumbLabel.innerHTML = `<i class="fas fa-chevron-right text-[10px] text-slate-400"></i><span class="px-1.5 font-medium">${tabName.charAt(0).toUpperCase() + tabName.slice(1)}</span>`;
+            }
+        }
+    }
+
+    // Grid/List View Toggle
+    function setGridView(isGrid) {
+        const gridView = document.getElementById('gridViewContainer');
+        const listView = document.getElementById('listViewContainer');
+
+        if (isGrid) {
+            gridView?.classList.remove('hidden');
+            listView?.classList.add('hidden');
+        } else {
+            gridView?.classList.add('hidden');
+            listView?.classList.remove('hidden');
+        }
+    }
+
+    // Dropdown Logic (Context Menu)
+    let activeDropdown = null;
+    function toggleDropdown(id) {
+        const dropdown = document.getElementById(id);
+
+        // Close others
+        if (activeDropdown && activeDropdown !== dropdown) {
+            activeDropdown.classList.add('hidden');
+        }
+
+        if (dropdown.classList.contains('hidden')) {
+            // Position context menu
+            if (event && event.clientX) {
+                dropdown.style.left = (event.clientX) + 'px';
+                dropdown.style.top = (event.clientY) + 'px';
+            }
+            dropdown.classList.remove('hidden');
+            activeDropdown = dropdown;
+        } else {
+            dropdown.classList.add('hidden');
+            activeDropdown = null;
+        }
+    }
+
+    document.addEventListener('click', (e) => {
+        if (activeDropdown && !activeDropdown.contains(e.target) && !e.target.closest('button')) {
+            activeDropdown.classList.add('hidden');
+            activeDropdown = null;
+        }
+    });
+
+    // Run Process Logic
+    window.runProcess = function (event, element) {
+        event.preventDefault();
+        event.stopPropagation();
+        const fileId = element.getAttribute('data-file-id');
+        const processType = element.getAttribute('data-process-type');
+
+        if (activeDropdown) activeDropdown.classList.add('hidden');
+        if (!confirm(`Start ${processType.replace(/_/g, ' ')}?`)) return;
+
+        const overlay = document.getElementById('processingOverlay');
+        const statusText = document.getElementById('processingStatus');
+
+        overlay.classList.remove('hidden');
+        overlay.classList.add('flex');
+        statusText.innerText = "Initializing process...";
+
+        const url = `/api/v1/processing/files/${fileId}/process/${processType}`;
+        fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include'
+        }).then(response => response.json().then(data => ({ status: response.status, data: data })))
+            .then(result => {
+                if (result.status === 200) {
+                    statusText.innerText = result.data.message || "Processing started!";
+                    setTimeout(() => { window.location.reload(); }, 1500);
+                } else {
+                    throw new Error(result.data.detail || "Processing failed");
+                }
+            }).catch(error => {
+                overlay.classList.add('hidden');
+                overlay.classList.remove('flex');
+                alert(`Error: ${error.message}`);
+            });
+    };
+
+    // Run multiple reference checks (collects checkboxes from modal)
+    window.runMultipleReferenceChecks = function (fileId) {
+        const modalId = `refCheckModal${fileId}`;
+        const modal = document.getElementById(modalId);
+        if (!modal) { alert('Reference modal not found'); return; }
+        const allCheckboxes = modal.querySelectorAll('.ref-check-input');
+        const checked = Array.from(allCheckboxes).filter(cb => cb.checked);
+        const types = checked.map(cb => cb.value);
+        if (types.length === 0) { alert('Please select at least one reference check option'); return; }
+
+        // hide modal
+        modal.classList.add('hidden');
+
+        if (!confirm(`Run ${types.length} reference check(s)?`)) return;
+        runReferenceCheckSequence(fileId, types, 0);
+    };
+
+    function runReferenceCheckSequence(fileId, processes, index) {
+        if (index >= processes.length) { setTimeout(() => window.location.reload(), 1000); return; }
+        const processType = processes[index];
+        const overlay = document.getElementById('processingOverlay');
+        const statusText = document.getElementById('processingStatus');
+        overlay.classList.remove('hidden');
+        overlay.classList.add('flex');
+        statusText.innerText = `Running ${processType.replace(/_/g, ' ')} (${index + 1}/${processes.length})...`;
+
+        fetch(`/api/v1/processing/files/${fileId}/process/${processType}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include'
+        }).then(response => response.json().then(data => ({ status: response.status, data: data })))
+            .then(result => {
+                if (result.status === 200) {
+                    setTimeout(() => runReferenceCheckSequence(fileId, processes, index + 1), 1000);
+                } else {
+                    throw new Error(result.data.detail || result.data.message || 'Processing failed');
+                }
+            }).catch(error => {
+                console.error('ERROR:', error.message);
+                overlay.classList.add('hidden');
+                overlay.classList.remove('flex');
+                alert(`Error during ${processType}: ${error.message}`);
+            });
+    }
+
+    // Run All Processes
+    window.runAllProcesses = function (event, fileId) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        if (activeDropdown) activeDropdown.classList.add('hidden');
+        if (!confirm('Run standard processes (Structuring, Reference Check, Technical Edit)? This will run sequentially.')) return;
+
+        // Define the sequence of standard editing processes
+        const processes = ['structuring', 'reference_structuring', 'technical'];
+
+        runReferenceCheckSequence(fileId, processes, 0);
+    };
+
+    // Structuring runner
+    // Structuring runner with polling
+    window.runStructuring = function (fileId) {
+        const modalId = `structuringModal${fileId}`;
+        const modeInput = document.querySelector(`input[name="structMode${fileId}"]:checked`);
+        const mode = modeInput ? modeInput.value : 'style';
+        const modal = document.getElementById(modalId);
+        if (modal) modal.classList.add('hidden');
+
+        const overlay = document.getElementById('processingOverlay');
+        const statusText = document.getElementById('processingStatus');
+        overlay.classList.remove('hidden');
+        overlay.classList.add('flex');
+        statusText.innerText = `Starting Structuring (${mode})...`;
+
+        const url = `/api/v1/processing/files/${fileId}/process/structuring?mode=${mode}`;
+
+        fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include' })
+            .then(response => response.json())
+            .then(result => {
+                if (result.status === 'processing') {
+                    statusText.innerText = 'Structuring in progress... Please wait.';
+                    pollStructuringStatus(fileId);
+                } else {
+                    throw new Error(result.message || 'Processing failed');
+                }
+            }).catch(error => {
+                console.error(error);
+                overlay.classList.add('hidden');
+                overlay.classList.remove('flex');
+                alert(`Error: ${error.message}`);
+            });
+    };
+
+    function pollStructuringStatus(fileId) {
+        const statusText = document.getElementById('processingStatus');
+
+        const intervalId = setInterval(() => {
+            fetch(`/api/v1/processing/files/${fileId}/structuring_status`, {
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include'
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'completed' && data.new_file_id) {
+                        clearInterval(intervalId);
+                        statusText.innerText = 'Structuring Complete! Redirecting to review...';
+                        setTimeout(() => {
+                            window.location.href = `/api/v1/files/${data.new_file_id}/structuring/review`;
+                        }, 1000);
+                    } else {
+                        // Still processing, continue waiting
+                    }
+                })
+                .catch(err => {
+                    console.error("Polling error:", err);
+                    // Optionally stop polling on repeated errors
+                });
+        }, 2000); // Check every 2 seconds
+    }
+
+    // Set default active tab on load
+    document.addEventListener('DOMContentLoaded', () => {
+        switchTab('root');
+        setGridView(true);
+    });
+</script>
+{% endblock %}

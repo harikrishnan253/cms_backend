@@ -1,0 +1,14 @@
+[Unit]
+Description=Gunicorn instance to serve CMS Backend
+After=network.target
+
+[Service]
+User=cms_user
+Group=www-data
+WorkingDirectory=/var/www/cms_backend
+Environment="PATH=/var/www/cms_backend/.venv/bin"
+EnvironmentFile=/var/www/cms_backend/.env
+ExecStart=/var/www/cms_backend/.venv/bin/gunicorn -w 4 -k uvicorn.workers.UvicornWorker app.main:app --bind 0.0.0.0:8000
+
+[Install]
+WantedBy=multi-user.target

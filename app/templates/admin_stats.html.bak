@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}System Statistics - Admin{% endblock %}
+
+{% block content %}
+<div class="row mb-4 fade-in">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h2 class="brand-title mb-1">System Statistics</h2>
+                <p class="text-muted mb-0">Overview of system usage and distribution</p>
+            </div>
+            <a href="/dashboard" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row g-4 mb-4 fade-in">
+    <div class="col-md-3">
+        <div class="stat-card p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="icon-box bg-soft-primary text-primary rounded-circle d-flex align-items-center justify-content-center"
+                    style="width: 50px; height: 50px;">
+                    <i class="fas fa-users fa-lg"></i>
+                </div>
+                <div class="dropdown">
+                    <button class="btn btn-link text-muted p-0" type="button"><i class="fas fa-ellipsis-v"></i></button>
+                </div>
+            </div>
+            <h3 class="fw-bold mb-1">{{ stats.total_users }}</h3>
+            <p class="text-muted small mb-0">Total Users</p>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="stat-card p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="icon-box bg-soft-success text-success rounded-circle d-flex align-items-center justify-content-center"
+                    style="width: 50px; height: 50px;">
+                    <i class="fas fa-project-diagram fa-lg"></i>
+                </div>
+            </div>
+            <h3 class="fw-bold mb-1">{{ stats.total_projects }}</h3>
+            <p class="text-muted small mb-0">Active Projects</p>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="stat-card p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="icon-box bg-soft-warning text-warning rounded-circle d-flex align-items-center justify-content-center"
+                    style="width: 50px; height: 50px;">
+                    <i class="fas fa-layer-group fa-lg"></i>
+                </div>
+            </div>
+            <h3 class="fw-bold mb-1">{{ stats.total_chapters }}</h3>
+            <p class="text-muted small mb-0">Total Chapters</p>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="stat-card p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="icon-box bg-soft-danger text-danger rounded-circle d-flex align-items-center justify-content-center"
+                    style="width: 50px; height: 50px;">
+                    <i class="fas fa-file-alt fa-lg"></i>
+                </div>
+            </div>
+            <h3 class="fw-bold mb-1">{{ stats.total_files }}</h3>
+            <p class="text-muted small mb-0">Files Uploaded</p>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 fade-in">
+    <!-- Role Distribution -->
+    <div class="col-md-6">
+        <div class="card shadow-xl border-0 h-100">
+            <div class="card-header bg-white border-0 pt-4 px-4 pb-0">
+                <h5 class="fw-bold mb-0">Role Distribution</h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-3 border-0">Role</th>
+                                <th class="text-end pe-3 border-0">Users</th>
+                                <th class="border-0" style="width: 40%"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for role_name, count in stats.role_breakdown.items() %}
+                            <tr>
+                                <td class="ps-3 fw-bold text-dark">{{ role_name }}</td>
+                                <td class="text-end pe-3">{{ count }}</td>
+                                <td class="pe-3">
+                                    {% set percentage = (count / stats.total_users * 100)|round|int %}
+                                    <div class="progress shadow-sm" style="height: 6px;">
+                                        <div class="progress-bar bg-gradient-primary" role="progressbar"
+                                            style="width: {{ percentage }}%"></div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Storage (Mock) -->
+    <div class="col-md-6">
+        <div class="card shadow-xl border-0 h-100">
+            <div class="card-header bg-white border-0 pt-4 px-4 pb-0">
+                <h5 class="fw-bold mb-0">System Health (Mock)</h5>
+            </div>
+            <div class="card-body p-4 d-flex flex-column justify-content-center align-items-center">
+                <div class="text-center">
+                    <i class="fas fa-server fa-4x text-muted mb-3 opacity-25"></i>
+                    <p class="text-muted">Storage usage metrics coming soon...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

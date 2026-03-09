@@ -1,0 +1,152 @@
+{% extends "base_tailwind.html" %}
+
+{% block title %}Create New Project{% endblock %}
+
+{% block content %}
+<div class="flex flex-col h-full p-8 bg-slate-50 overflow-auto">
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h2 class="text-3xl font-bold text-slate-800">Create New Project</h2>
+            <p class="text-slate-500 mt-1">Start a new book or project</p>
+        </div>
+        <a href="/projects"
+            class="px-4 py-2 bg-white border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 transition-colors shadow-sm flex items-center gap-2">
+            <i class="fas fa-arrow-left"></i> Back to Projects
+        </a>
+    </div>
+
+    <div class="flex justify-center">
+        <div class="w-full max-w-3xl bg-white rounded-2xl shadow-xl border border-slate-100 p-8">
+            <form method="POST" action="/projects/create_with_files" enctype="multipart/form-data" class="space-y-6">
+
+                <!-- Project Details Section -->
+                <div class="border-b border-slate-100 pb-4 mb-4">
+                    <h3 class="text-lg font-semibold text-slate-700 mb-4">Project Details</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Project Code -->
+                        <div>
+                            <label for="code" class="block text-sm font-bold text-slate-600 uppercase mb-2">Project Code
+                                <span class="text-rose-500">*</span></label>
+                            <input type="text" id="code" name="code" required placeholder="e.g. PUB-2024-001"
+                                class="block w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-slate-50">
+                            <p class="text-xs text-slate-400 mt-1">Unique identifier for the project</p>
+                        </div>
+
+                        <!-- ISBN / Client Name (using client_name as general identifier or client) -->
+                        <div>
+                            <label for="client_name"
+                                class="block text-sm font-bold text-slate-600 uppercase mb-2">Client Name</label>
+                            <div class="relative">
+                                <select id="client_name" name="client_name"
+                                    class="block w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-slate-50 appearance-none">
+                                    <option value="">Select Client</option>
+                                    <option value="WKH">WKH</option>
+                                    <option value="KH">KH</option>
+                                    <option value="Springer">Springer</option>
+                                    <option value="JBL">JBL</option>
+                                </select>
+                                <div
+                                    class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none text-slate-500">
+                                    <i class="fas fa-chevron-down text-xs"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Title -->
+                    <div class="mt-6">
+                        <label for="title" class="block text-sm font-bold text-slate-600 uppercase mb-2">Project Title
+                            <span class="text-rose-500">*</span></label>
+                        <input type="text" id="title" name="title" required placeholder="e.g. Advanced Data Science"
+                            class="block w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-slate-50">
+                    </div>
+                </div>
+
+                <!-- Technical Specs -->
+                <div class="border-b border-slate-100 pb-4 mb-4">
+                    <h3 class="text-lg font-semibold text-slate-700 mb-4">Configuration</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- XML Standard -->
+                        <div>
+                            <label for="xml_standard" class="block text-sm font-bold text-slate-600 uppercase mb-2">XML
+                                Standard <span class="text-rose-500">*</span></label>
+                            <div class="relative">
+                                <select id="xml_standard" name="xml_standard" required
+                                    class="block w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-slate-50 appearance-none">
+                                    <option value="NLM">NLM / JATS</option>
+                                    <option value="BITS">BITS (Book)</option>
+                                    <option value="DocBook">DocBook</option>
+                                    <option value="TEI">TEI</option>
+                                </select>
+                                <div
+                                    class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none text-slate-500">
+                                    <i class="fas fa-chevron-down text-xs"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Chapter Count -->
+                        <div>
+                            <label for="chapter_count"
+                                class="block text-sm font-bold text-slate-600 uppercase mb-2">Number of Chapters <span
+                                    class="text-rose-500">*</span></label>
+                            <input type="number" id="chapter_count" name="chapter_count" required min="1" value="1"
+                                class="block w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-slate-50">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- File Upload -->
+                <div>
+                    <h3 class="text-lg font-semibold text-slate-700 mb-4">Initial Files</h3>
+                    <label class="block w-full cursor-pointer">
+                        <div
+                            class="w-full flex flex-col items-center justify-center h-32 border-2 border-dashed border-slate-300 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors">
+                            <i class="fas fa-cloud-upload-alt text-3xl text-slate-400 mb-2"></i>
+                            <span class="font-medium text-slate-600">Click to upload files</span>
+                            <span class="text-xs text-slate-400 mt-1">PDF, DOCX, XML, Images (Max 50MB)</span>
+                        </div>
+                        <input type="file" name="files" multiple class="hidden" onchange="updateFileList(this)">
+                    </label>
+                    <div id="file-list" class="mt-4 space-y-2 text-sm text-slate-600"></div>
+                </div>
+
+                <!-- Submit -->
+                <div class="pt-6 flex justify-end gap-3">
+                    <a href="/projects"
+                        class="px-6 py-3 border border-slate-200 rounded-xl text-slate-600 font-bold hover:bg-slate-50 transition-colors">Cancel</a>
+                    <button type="submit"
+                        class="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold rounded-xl shadow-lg transition-all transform hover:-translate-y-0.5 flex items-center gap-2">
+                        <i class="fas fa-plus-circle"></i> Create Project
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function updateFileList(input) {
+        const listContainer = document.getElementById('file-list');
+        listContainer.innerHTML = '';
+        if (input.files.length > 0) {
+            for (let i = 0; i < input.files.length; i++) {
+                const file = input.files[i];
+                const item = document.createElement('div');
+                item.className = 'flex items-center gap-2 bg-slate-100 px-3 py-2 rounded-lg';
+                item.innerHTML = `<i class="fas fa-file text-slate-400"></i> <span>${file.name}</span> <span class="text-xs text-slate-400">(${formatBytes(file.size)})</span>`;
+                listContainer.appendChild(item);
+            }
+        }
+    }
+
+    function formatBytes(bytes, decimals = 2) {
+        if (!+bytes) return '0 Bytes';
+        const k = 1024;
+        const dm = decimals < 0 ? 0 : decimals;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
+    }
+</script>
+{% endblock %}
