@@ -1,3 +1,4 @@
+from app.utils.timezone import now_ist_naive
 
 from datetime import datetime
 from docx.oxml.shared import OxmlElement, qn
@@ -12,7 +13,7 @@ def create_element(name):
     return OxmlElement(name)
 
 def get_current_iso_time():
-    return datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+    return now_ist_naive().strftime("%Y-%m-%dT%H:%M:%SZ")
 
 import random
 

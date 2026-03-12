@@ -1,0 +1,109 @@
+version: "3.8"
+
+services:
+  db:
+    image: postgres:15
+    container_name: cms_db
+    env_file: .env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-cms_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cms_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-cms_db}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cms_user} -d ${POSTGRES_DB:-cms_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+
+  redis:
+    image: redis:7-alpine
+    container_name: cms_redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cms_backend
+    env_file: .env
+    volumes:
+      - ./uploads:/app/uploads
+      - ./outputs:/app/outputs
+      - ./data:/app/data
+      - ./temp_reports:/app/temp_reports
+      - ./ref_cache.json:/app/ref_cache.json
+    environment:
+      REDIS_URL: redis://redis:6379/0
+    expose:
+      - "8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: always
+
+  celery_worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cms_celery_worker
+    env_file: .env
+    volumes:
+      - ./uploads:/app/uploads
+      - ./outputs:/app/outputs
+      - ./data:/app/data
+      - ./temp_reports:/app/temp_reports
+      - ./ref_cache.json:/app/ref_cache.json
+    environment:
+      REDIS_URL: redis://redis:6379/0
+    command: celery -A app.core.celery_app worker --loglevel=info --concurrency=4
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: always
+
+  collabora:
+    image: collabora/code
+    container_name: cms_collabora
+    env_file: .env
+    environment:
+      aliasgroup1: http://10.1.1.18:8080
+      DONT_GEN_SSL_CERT: "YES"
+      extra_params: "--o:ssl.enable=false --o:ssl.termination=false"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    expose:
+      - "9980"
+    restart: always
+
+  nginx:
+    image: nginx:alpine
+    container_name: cms_nginx
+    ports:
+      - "8080:80"
+      - "8443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - certbot_webroot:/var/www/certbot:ro
+    depends_on:
+      - backend
+      - collabora
+    restart: always
+
+volumes:
+  postgres_data:
+  certbot_webroot:

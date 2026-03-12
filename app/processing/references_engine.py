@@ -3,9 +3,15 @@ from pathlib import Path
 
 # Legacy imports
 # These modules contain the core logic migrated from the Flask app
-from app.processing.legacy import ReferencesStructing
-from app.processing.legacy import Referencenumvalidation
-from app.processing.legacy import ReferenceAPAValidation
+try:
+    from app.processing.legacy import ReferencesStructing
+    from app.processing.legacy import Referencenumvalidation
+    from app.processing.legacy import ReferenceAPAValidation
+    LEGACY_AVAILABLE = True
+except Exception as e:
+    import logging
+    logging.getLogger(__name__).warning(f"Legacy reference modules unavailable: {e}")
+    LEGACY_AVAILABLE = False
 
 class ReferencesEngine:
     def process_document(self, file_path: str, 

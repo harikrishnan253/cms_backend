@@ -499,7 +499,7 @@
                                     <span class="text-slate-800">{{ file.filename }}</span>
                                 </td>
                                 <td class="px-4 py-1 text-slate-500 whitespace-nowrap">{{
-                                    file.uploaded_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                    file.uploaded_at | ist }}</td>
                                 <td class="px-4 py-1 text-slate-500 whitespace-nowrap">
                                     {% if file.filename.lower().endswith('.docx') %}Microsoft Word Document
                                     {% elif file.filename.lower().endswith('.doc') %}Microsoft Word Document

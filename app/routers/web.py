@@ -1,3 +1,4 @@
+from app.utils.timezone import now_ist_naive
 from app.services.file_service import UPLOAD_DIR
 from fastapi import APIRouter, Request, Form, Depends, HTTPException, status
 from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse
@@ -14,6 +15,18 @@ from app.services import project_service
 
 settings = get_settings()
 templates = Jinja2Templates(directory="app/templates")
+
+import pytz as _pytz
+_IST = _pytz.timezone("Asia/Kolkata")
+
+def _to_ist(dt):
+    if dt is None:
+        return ""
+    if dt.tzinfo is None:
+        dt = _pytz.utc.localize(dt)
+    return dt.astimezone(_IST).strftime("%Y-%m-%d %H:%M")
+
+templates.env.filters["ist"] = _to_ist
 router = APIRouter()
 
 @router.get("/", response_class=HTMLResponse)
@@ -854,7 +867,7 @@ async def upload_chapter_files(
             
             # 3. Update File Record
             existing_file.version += 1
-            existing_file.uploaded_at = datetime.utcnow()
+            existing_file.uploaded_at = now_ist_naive()
             # Auto Check-in (Release Lock)
             existing_file.is_checked_out = False
             existing_file.checked_out_by_id = None
@@ -1004,7 +1017,7 @@ async def checkout_file(
             
     file_record.is_checked_out = True
     file_record.checked_out_by_id = user.id
-    file_record.checked_out_at = datetime.utcnow()
+    file_record.checked_out_at = now_ist_naive()
     db.commit()
     
     return RedirectResponse(
@@ -1047,7 +1060,7 @@ async def get_notifications_data(
     data = []
     for f in recent_files:
         # Calculate time ago
-        delta = datetime.utcnow() - f.uploaded_at
+        delta = now_ist_naive() - f.uploaded_at
         if delta.days > 0:
             ago = f"{delta.days}d ago"
         elif delta.seconds > 3600:
@@ -1086,7 +1099,7 @@ async def activities_page(
     activities = []
     
     for f in recent_files:
-        delta = datetime.utcnow() - f.uploaded_at
+        delta = now_ist_naive() - f.uploaded_at
         if delta.days > 0:
             ago = f"{delta.days}d ago"
         elif delta.seconds > 3600:
@@ -1114,7 +1127,7 @@ async def activities_page(
         })
     
     for v in recent_versions:
-        delta = datetime.utcnow() - v.uploaded_at
+        delta = now_ist_naive() - v.uploaded_at
         if delta.days > 0:
             ago = f"{delta.days}d ago"
         elif delta.seconds > 3600:
@@ -1147,7 +1160,7 @@ async def activities_page(
     
     # Calculate today's activities (within last 24 hours)
     from datetime import timedelta
-    today_cutoff = datetime.utcnow() - timedelta(days=1)
+    today_cutoff = now_ist_naive() - timedelta(days=1)
     today_count = sum(1 for a in activities if a["timestamp"] > today_cutoff)
     
     user_data = {"username": user.username, "roles": [r.name for r in user.roles], "id": user.id}

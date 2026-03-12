@@ -1,3 +1,4 @@
+from app.utils.timezone import now_ist_naive
 from app.services.file_service import UPLOAD_DIR
 from app.utils.inject_styles import inject_publisher_styles
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
@@ -243,7 +244,7 @@ async def run_file_process(
     else:
         file_record.is_checked_out = True
         file_record.checked_out_by_id = user.id
-        file_record.checked_out_at = datetime.utcnow()
+        file_record.checked_out_at = now_ist_naive()
         db.commit()
 
     # 4. Versioning (Auto-backup)

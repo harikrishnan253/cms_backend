@@ -1,3 +1,4 @@
+from app.utils.timezone import now_ist_naive
 from sqlalchemy.orm import Session
 from fastapi import UploadFile
 from app import models
@@ -19,7 +20,7 @@ def save_upload_file(upload_file: UploadFile, destination: str):
 def create_file_record(db: Session, project_id: int, file: UploadFile):
     # Determine local path (mocking S3 for now)
     # Using timestamp to avoid collisions
-    timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
+    timestamp = now_ist_naive().strftime("%Y%m%d%H%M%S")
     filename = f"{project_id}_{timestamp}_{file.filename}"
     path = os.path.join(UPLOAD_DIR, filename)
     
