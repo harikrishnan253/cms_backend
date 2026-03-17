@@ -82,7 +82,7 @@ export function useStructuringProcessing({
       setStatus({
         tone: "pending",
         fileId: activeFile.id,
-        message: `Structuring is running for ${activeFile.filename}. Polling the current compatibility status contract.`,
+        message: `Structuring is running for ${activeFile.filename}.`,
         compatibilityStatus: statusQuery.data.compatibility_status,
       });
       return;

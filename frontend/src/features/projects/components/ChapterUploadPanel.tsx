@@ -19,6 +19,7 @@ interface ChapterUploadPanelProps {
   errorMessage: string | null;
   onUpload: (category: string, files: File[]) => Promise<unknown>;
   onClearResult: () => void;
+  onClose?: () => void;
 }
 
 function uploadedItemLabel(item: FileUploadResponse["uploaded"][number]) {
@@ -41,10 +42,13 @@ export function ChapterUploadPanel({
   errorMessage,
   onUpload,
   onClearResult,
+  onClose,
 }: ChapterUploadPanelProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [category, setCategory] = useState(
-    categoryOptions.includes(activeTab as (typeof categoryOptions)[number]) ? activeTab : "Manuscript",
+    categoryOptions.includes(activeTab as (typeof categoryOptions)[number])
+      ? activeTab
+      : "Manuscript",
   );
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
 
@@ -89,13 +93,25 @@ export function ChapterUploadPanel({
   }
 
   return (
-    <section className="panel stack">
-      <div className="section-title">
-        <h2>Upload files</h2>
-        <span className="helper-text">Uses the existing /api/v2 upload and overwrite contract.</span>
+    <section className="chapter-upload-panel">
+      <div className="chapter-upload-panel__header">
+        <div>
+          <h2>Upload files</h2>
+          <span className="helper-text">Add files to the selected folder. Replacements keep version history.</span>
+        </div>
+        {onClose ? (
+          <button
+            className="chapter-upload-panel__close"
+            disabled={isPending}
+            type="button"
+            onClick={onClose}
+          >
+            Close
+          </button>
+        ) : null}
       </div>
 
-      <form className="upload-form" onSubmit={handleSubmit}>
+      <form className="upload-form chapter-upload-panel__form" onSubmit={handleSubmit}>
         <label className="field">
           <span>Category</span>
           <select
@@ -162,7 +178,7 @@ export function ChapterUploadPanel({
                     <strong>{item.file.filename}</strong>
                     <span>{uploadedItemLabel(item)}</span>
                     <span className="helper-text">
-                      {item.file.category} · v{item.file.version}
+                      {item.file.category} | v{item.file.version}
                     </span>
                     {item.archive_path ? (
                       <span className="helper-text">Archive: {item.archive_path}</span>
