@@ -2,10 +2,11 @@ import { useState } from "react";
 
 interface ChapterCreateFormProps {
   isPending: boolean;
+  onCancel?: () => void;
   onSubmit: (number: string, title: string) => Promise<unknown>;
 }
 
-export function ChapterCreateForm({ isPending, onSubmit }: ChapterCreateFormProps) {
+export function ChapterCreateForm({ isPending, onCancel, onSubmit }: ChapterCreateFormProps) {
   const [number, setNumber] = useState("");
   const [title, setTitle] = useState("");
 
@@ -23,40 +24,47 @@ export function ChapterCreateForm({ isPending, onSubmit }: ChapterCreateFormProp
   }
 
   return (
-    <section className="panel stack">
-      <div className="section-title">
-        <h2>Create chapter</h2>
-        <span className="helper-text">
-          {"Uses the current /api/v2/projects/{project_id}/chapters contract."}
-        </span>
+    <section className="project-detail-form-card">
+      <div className="project-detail-form-card__header">
+        <h3>Create New Chapter</h3>
+        {onCancel ? (
+          <button className="project-detail-form-card__close" type="button" onClick={onCancel}>
+            ×
+          </button>
+        ) : null}
       </div>
 
-      <form className="admin-form-grid" onSubmit={handleSubmit}>
+      <form className="project-detail-form-card__form" onSubmit={handleSubmit}>
         <label className="field">
-          <span>Number</span>
+          <span>Chapter Number</span>
           <input
             className="search-input"
             disabled={isPending}
-            placeholder="03"
+            placeholder="e.g. 01"
             type="text"
             value={number}
             onChange={(event) => setNumber(event.target.value)}
           />
         </label>
         <label className="field">
-          <span>Title</span>
+          <span>Chapter Title</span>
           <input
             className="search-input"
             disabled={isPending}
-            placeholder="Chapter 03"
+            placeholder="e.g. Introduction"
             type="text"
             value={title}
             onChange={(event) => setTitle(event.target.value)}
           />
         </label>
-        <div className="upload-actions">
+        <div className="project-detail-form-card__actions">
+          {onCancel ? (
+            <button className="button button--secondary" type="button" onClick={onCancel}>
+              Cancel
+            </button>
+          ) : null}
           <button className="button" disabled={isPending} type="submit">
-            {isPending ? "Creating..." : "Create chapter"}
+            {isPending ? "Creating..." : "Create Chapter"}
           </button>
         </div>
       </form>

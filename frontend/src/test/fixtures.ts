@@ -3,6 +3,8 @@ import { AxiosError, AxiosHeaders, type InternalAxiosRequestConfig } from "axios
 import type {
   AdminRole,
   AdminUser,
+  AdminDashboardResponse,
+  ChapterSummary,
   ChapterDetailResponse,
   ChapterFilesResponse,
   DashboardResponse,
@@ -11,6 +13,8 @@ import type {
   LockState,
   NotificationItem,
   NotificationsResponse,
+  ProjectChaptersResponse,
+  ProjectDetailResponse,
   ProjectSummary,
   ProjectsListResponse,
   SessionGetResponse,
@@ -59,6 +63,21 @@ export function createProjectSummary(overrides: Partial<ProjectSummary> = {}): P
   };
 }
 
+export function createChapterSummary(overrides: Partial<ChapterSummary> = {}): ChapterSummary {
+  return {
+    id: 20,
+    project_id: 10,
+    number: "01",
+    title: "Chapter One",
+    has_art: false,
+    has_manuscript: true,
+    has_indesign: false,
+    has_proof: false,
+    has_xml: false,
+    ...overrides,
+  };
+}
+
 export function createDashboardResponse(
   overrides: Partial<DashboardResponse> = {},
 ): DashboardResponse {
@@ -88,6 +107,28 @@ export function createProjectsListResponse(
       limit: 100,
       total: 1,
     },
+    ...overrides,
+  };
+}
+
+export function createProjectDetailResponse(
+  overrides: Partial<ProjectDetailResponse> = {},
+): ProjectDetailResponse {
+  return {
+    project: {
+      ...createProjectSummary(),
+      chapters: [createChapterSummary()],
+    },
+    ...overrides,
+  };
+}
+
+export function createProjectChaptersResponse(
+  overrides: Partial<ProjectChaptersResponse> = {},
+): ProjectChaptersResponse {
+  return {
+    project: createProjectSummary(),
+    chapters: [createChapterSummary()],
     ...overrides,
   };
 }
@@ -222,6 +263,21 @@ export function createAdminRole(overrides: Partial<AdminRole> = {}): AdminRole {
     id: 1,
     name: "Admin",
     description: "Administrator",
+    ...overrides,
+  };
+}
+
+export function createAdminDashboardResponse(
+  overrides: Partial<AdminDashboardResponse> = {},
+): AdminDashboardResponse {
+  return {
+    viewer: createViewer(),
+    stats: {
+      total_users: 4,
+      total_files: 18,
+      total_validations: 7,
+      total_macro: 2,
+    },
     ...overrides,
   };
 }

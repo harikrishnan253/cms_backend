@@ -63,16 +63,16 @@ describe("RegisterPage", () => {
     fireEvent.change(await screen.findByLabelText("Username"), {
       target: { value: "existing" },
     });
-    fireEvent.change(screen.getByLabelText("Email"), {
+    fireEvent.change(screen.getByLabelText("Email address"), {
       target: { value: "existing@example.com" },
     });
     fireEvent.change(screen.getByLabelText("Password"), {
       target: { value: "Password123!" },
     });
-    fireEvent.change(screen.getByLabelText("Confirm password"), {
+    fireEvent.change(screen.getByLabelText("Confirm Password"), {
       target: { value: "Password123!" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Create account" }));
+    fireEvent.click(screen.getByRole("button", { name: "Create Account" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Username or email already exists");
   });
@@ -110,16 +110,16 @@ describe("RegisterPage", () => {
     fireEvent.change(await screen.findByLabelText("Username"), {
       target: { value: "new-user" },
     });
-    fireEvent.change(screen.getByLabelText("Email"), {
+    fireEvent.change(screen.getByLabelText("Email address"), {
       target: { value: "new-user@example.com" },
     });
     fireEvent.change(screen.getByLabelText("Password"), {
       target: { value: "Password123!" },
     });
-    fireEvent.change(screen.getByLabelText("Confirm password"), {
+    fireEvent.change(screen.getByLabelText("Confirm Password"), {
       target: { value: "Password123!" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Create account" }));
+    fireEvent.click(screen.getByRole("button", { name: "Create Account" }));
 
     await waitFor(() => {
       expect(registerSession).toHaveBeenCalledWith({

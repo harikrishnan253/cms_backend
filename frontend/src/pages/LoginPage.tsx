@@ -4,8 +4,10 @@ import { useQuery } from "@tanstack/react-query";
 
 import { getApiErrorMessage } from "@/api/client";
 import { getSession } from "@/api/session";
-import { ErrorState } from "@/components/ui/ErrorState";
-import { LoadingState } from "@/components/ui/LoadingState";
+import { AuthButton } from "@/features/session/components/AuthButton";
+import { AuthCard } from "@/features/session/components/AuthCard";
+import { AuthErrorBlock } from "@/features/session/components/AuthErrorBlock";
+import { AuthInput } from "@/features/session/components/AuthInput";
 import { useLogin } from "@/features/session/useLogin";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { uiPaths } from "@/utils/appPaths";
@@ -44,27 +46,51 @@ export function LoginPage() {
 
   if (sessionQuery.isPending) {
     return (
-      <LoadingState
-        title="Loading login"
-        message="Checking whether you already have an active CMS session."
-      />
+      <AuthCard
+        subtitle={
+          <>
+            Or{" "}
+            <Link className="auth-page__link" to={uiPaths.register}>
+              create a new account
+            </Link>
+          </>
+        }
+        title="Sign in to your account"
+      >
+        <form className="auth-form" onSubmit={(event) => event.preventDefault()}>
+          <div className="auth-loading-copy">Checking whether you already have an active CMS session.</div>
+        </form>
+      </AuthCard>
     );
   }
 
   if (sessionQuery.isError) {
     return (
-      <ErrorState
-        title="Login unavailable"
-        message={getApiErrorMessage(
-          sessionQuery.error,
-          "The frontend could not verify the current CMS session.",
-        )}
-        actions={
-          <button className="button" onClick={() => sessionQuery.refetch()} type="button">
-            Retry
-          </button>
+      <AuthCard
+        subtitle={
+          <>
+            Or{" "}
+            <Link className="auth-page__link" to={uiPaths.register}>
+              create a new account
+            </Link>
+          </>
         }
-      />
+        title="Sign in to your account"
+      >
+        <div className="auth-form">
+          <AuthErrorBlock
+            message={getApiErrorMessage(
+              sessionQuery.error,
+              "The frontend could not verify the current CMS session.",
+            )}
+          />
+          <div className="auth-actions auth-actions--single">
+            <AuthButton onClick={() => sessionQuery.refetch()} type="button">
+              Retry
+            </AuthButton>
+          </div>
+        </div>
+      </AuthCard>
     );
   }
 
@@ -73,50 +99,56 @@ export function LoginPage() {
   }
 
   return (
-    <main className="page">
-      <section className="feedback">
-        <h2>Login to CMS UI</h2>
-        <p>Use your existing CMS credentials. The backend still owns session creation and cookie issuance.</p>
-        <form className="stack" onSubmit={handleSubmit}>
-          <label className="stack">
-            <span>Username</span>
-            <input
-              autoComplete="username"
-              className="input"
-              name="username"
-              onChange={(event) => setUsername(event.target.value)}
-              required
-              type="text"
-              value={username}
-            />
+    <AuthCard
+      subtitle={
+        <>
+          Or{" "}
+          <Link className="auth-page__link" to={uiPaths.register}>
+            create a new account
+          </Link>
+        </>
+      }
+      title="Sign in to your account"
+    >
+      <form className="auth-form" onSubmit={handleSubmit}>
+        {loginMutation.isError ? (
+          <AuthErrorBlock message={getApiErrorMessage(loginMutation.error, "Login failed.")} />
+        ) : null}
+        <AuthInput
+          autoComplete="username"
+          id="username"
+          label="Username"
+          name="username"
+          onChange={(event) => setUsername(event.target.value)}
+          required
+          type="text"
+          value={username}
+        />
+        <AuthInput
+          autoComplete="current-password"
+          id="password"
+          label="Password"
+          name="password"
+          onChange={(event) => setPassword(event.target.value)}
+          required
+          type="password"
+          value={password}
+        />
+        <div className="auth-meta-row">
+          <label className="auth-checkbox">
+            <input className="auth-checkbox__input" id="remember-me" name="remember-me" type="checkbox" />
+            <span className="auth-checkbox__label">Remember me</span>
           </label>
-          <label className="stack">
-            <span>Password</span>
-            <input
-              autoComplete="current-password"
-              className="input"
-              name="password"
-              onChange={(event) => setPassword(event.target.value)}
-              required
-              type="password"
-              value={password}
-            />
-          </label>
-          {loginMutation.isError ? (
-            <p className="status-banner status-banner--error" role="alert">
-              {getApiErrorMessage(loginMutation.error, "Login failed.")}
-            </p>
-          ) : null}
-          <div className="feedback-actions">
-            <button className="button" disabled={loginMutation.isPending} type="submit">
-              {loginMutation.isPending ? "Signing in..." : "Sign in"}
-            </button>
-            <Link className="button button--secondary" to={uiPaths.register}>
-              Create account
-            </Link>
-          </div>
-        </form>
-      </section>
-    </main>
+          <a className="auth-page__link auth-page__link--small" href="#">
+            Forgot your password?
+          </a>
+        </div>
+        <div className="auth-actions auth-actions--single">
+          <AuthButton disabled={loginMutation.isPending} type="submit">
+            {loginMutation.isPending ? "Signing in..." : "Sign in"}
+          </AuthButton>
+        </div>
+      </form>
+    </AuthCard>
   );
 }

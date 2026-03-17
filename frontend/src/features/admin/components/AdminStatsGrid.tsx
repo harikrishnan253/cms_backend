@@ -5,24 +5,43 @@ interface AdminStatsGridProps {
 }
 
 export function AdminStatsGrid({ stats }: AdminStatsGridProps) {
+  const cards = [
+    {
+      label: "Total Users",
+      value: stats.total_users,
+      tone: "users",
+    },
+    {
+      label: "Total Files",
+      value: stats.total_files,
+      tone: "files",
+    },
+    {
+      label: "Total Validations",
+      value: stats.total_validations,
+      tone: "validations",
+    },
+    {
+      label: "Total Macro",
+      value: stats.total_macro,
+      tone: "macro",
+    },
+  ] as const;
+
   return (
-    <div className="metrics-grid">
-      <article className="metric-card">
-        <span>Total users</span>
-        <strong>{stats.total_users}</strong>
-      </article>
-      <article className="metric-card">
-        <span>Total files</span>
-        <strong>{stats.total_files}</strong>
-      </article>
-      <article className="metric-card">
-        <span>Total validations</span>
-        <strong>{stats.total_validations}</strong>
-      </article>
-      <article className="metric-card">
-        <span>Total macro</span>
-        <strong>{stats.total_macro}</strong>
-      </article>
+    <div className="admin-dashboard-stats">
+      {cards.map((card) => (
+        <article className="admin-stat-card" key={card.label}>
+          <div
+            aria-hidden="true"
+            className={`admin-stat-card__icon admin-stat-card__icon--${card.tone}`}
+          >
+            {card.label.split(" ")[1]?.slice(0, 1) ?? card.label.slice(0, 1)}
+          </div>
+          <strong>{card.value}</strong>
+          <span>{card.label}</span>
+        </article>
+      ))}
     </div>
   );
 }

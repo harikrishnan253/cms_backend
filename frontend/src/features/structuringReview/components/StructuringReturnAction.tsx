@@ -4,22 +4,28 @@ import type { StructuringReviewActions } from "@/types/api";
 
 interface StructuringReturnActionProps {
   actions: StructuringReviewActions;
+  className?: string;
+  label?: string;
 }
 
-export function StructuringReturnAction({ actions }: StructuringReturnActionProps) {
+export function StructuringReturnAction({
+  actions,
+  className = "button button--secondary",
+  label = "Return",
+}: StructuringReturnActionProps) {
   const navigate = useNavigate();
 
   if (actions.return_mode === "route" && actions.return_href) {
     return (
-      <a className="button button--secondary" href={actions.return_href}>
-        Return
+      <a className={className} href={actions.return_href}>
+        {label}
       </a>
     );
   }
 
   return (
-    <button className="button button--secondary" type="button" onClick={() => navigate(-1)}>
-      Return
+    <button className={className} type="button" onClick={() => navigate(-1)}>
+      {label}
     </button>
   );
 }

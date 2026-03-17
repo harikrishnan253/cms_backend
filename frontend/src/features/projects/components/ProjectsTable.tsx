@@ -9,35 +9,29 @@ interface ProjectsTableProps {
 
 export function ProjectsTable({ projects }: ProjectsTableProps) {
   return (
-    <div className="panel">
-      <table className="list-table">
-        <thead>
-          <tr>
-            <th>Code</th>
-            <th>Title</th>
-            <th>Client</th>
-            <th>Status</th>
-            <th>Chapters</th>
-            <th>Files</th>
-          </tr>
-        </thead>
-        <tbody>
-          {projects.map((project) => (
-            <tr key={project.id}>
-              <td>{project.code}</td>
-              <td>
-                <Link className="table-link" to={uiPaths.projectDetail(project.id)}>
-                  {project.title}
-                </Link>
-              </td>
-              <td>{project.client_name || "No client"}</td>
-              <td>{project.status}</td>
-              <td>{project.chapter_count}</td>
-              <td>{project.file_count}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="projects-grid">
+      {projects.map((project) => (
+        <article className="projects-card" key={project.id}>
+          <Link className="projects-card__link" to={uiPaths.projectDetail(project.id)}>
+            <div className="projects-card__header">
+              <div>
+                <h2 className="projects-card__title">{project.title}</h2>
+                <p className="projects-card__code">{project.code}</p>
+              </div>
+              <div className="projects-card__icon" aria-hidden="true">
+                📚
+              </div>
+            </div>
+            <p className="projects-card__client">{project.client_name || ""}</p>
+            <div className="projects-card__meta">
+              <span>{project.status}</span>
+              <span>{project.xml_standard}</span>
+              <span>{project.chapter_count} chapters</span>
+              <span>{project.file_count} files</span>
+            </div>
+          </Link>
+        </article>
+      ))}
     </div>
   );
 }

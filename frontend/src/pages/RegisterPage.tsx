@@ -4,8 +4,10 @@ import { useQuery } from "@tanstack/react-query";
 
 import { getApiErrorMessage } from "@/api/client";
 import { getSession } from "@/api/session";
-import { ErrorState } from "@/components/ui/ErrorState";
-import { LoadingState } from "@/components/ui/LoadingState";
+import { AuthButton } from "@/features/session/components/AuthButton";
+import { AuthCard } from "@/features/session/components/AuthCard";
+import { AuthErrorBlock } from "@/features/session/components/AuthErrorBlock";
+import { AuthInput } from "@/features/session/components/AuthInput";
 import { getRegisterErrorMessage, useRegister } from "@/features/session/useRegister";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { uiPaths } from "@/utils/appPaths";
@@ -48,27 +50,51 @@ export function RegisterPage() {
 
   if (sessionQuery.isPending) {
     return (
-      <LoadingState
-        title="Loading registration"
-        message="Checking whether you already have an active CMS session."
-      />
+      <AuthCard
+        subtitle={
+          <>
+            Or{" "}
+            <Link className="auth-page__link" to={uiPaths.login}>
+              sign in to your existing account
+            </Link>
+          </>
+        }
+        title="Create a new account"
+      >
+        <form className="auth-form" onSubmit={(event) => event.preventDefault()}>
+          <div className="auth-loading-copy">Checking whether you already have an active CMS session.</div>
+        </form>
+      </AuthCard>
     );
   }
 
   if (sessionQuery.isError) {
     return (
-      <ErrorState
-        title="Registration unavailable"
-        message={getApiErrorMessage(
-          sessionQuery.error,
-          "The frontend could not verify the current CMS session.",
-        )}
-        actions={
-          <button className="button" onClick={() => sessionQuery.refetch()} type="button">
-            Retry
-          </button>
+      <AuthCard
+        subtitle={
+          <>
+            Or{" "}
+            <Link className="auth-page__link" to={uiPaths.login}>
+              sign in to your existing account
+            </Link>
+          </>
         }
-      />
+        title="Create a new account"
+      >
+        <div className="auth-form">
+          <AuthErrorBlock
+            message={getApiErrorMessage(
+              sessionQuery.error,
+              "The frontend could not verify the current CMS session.",
+            )}
+          />
+          <div className="auth-actions auth-actions--single">
+            <AuthButton onClick={() => sessionQuery.refetch()} type="button">
+              Retry
+            </AuthButton>
+          </div>
+        </div>
+      </AuthCard>
     );
   }
 
@@ -77,74 +103,67 @@ export function RegisterPage() {
   }
 
   return (
-    <main className="page">
-      <section className="feedback">
-        <h2>Create CMS account</h2>
-        <p>The backend still owns validation, role bootstrap, and session issuance.</p>
-        <form className="stack" onSubmit={handleSubmit}>
-          <label className="stack">
-            <span>Username</span>
-            <input
-              autoComplete="username"
-              className="input"
-              name="username"
-              onChange={(event) => setUsername(event.target.value)}
-              required
-              type="text"
-              value={username}
-            />
-          </label>
-          <label className="stack">
-            <span>Email</span>
-            <input
-              autoComplete="email"
-              className="input"
-              name="email"
-              onChange={(event) => setEmail(event.target.value)}
-              required
-              type="email"
-              value={email}
-            />
-          </label>
-          <label className="stack">
-            <span>Password</span>
-            <input
-              autoComplete="new-password"
-              className="input"
-              name="password"
-              onChange={(event) => setPassword(event.target.value)}
-              required
-              type="password"
-              value={password}
-            />
-          </label>
-          <label className="stack">
-            <span>Confirm password</span>
-            <input
-              autoComplete="new-password"
-              className="input"
-              name="confirm_password"
-              onChange={(event) => setConfirmPassword(event.target.value)}
-              required
-              type="password"
-              value={confirmPassword}
-            />
-          </label>
-          {registerMutation.isError ? (
-            <p className="status-banner status-banner--error" role="alert">
-              {getRegisterErrorMessage(registerMutation.error)}
-            </p>
-          ) : null}
-          <div className="feedback-actions">
-            <button className="button" disabled={registerMutation.isPending} type="submit">
-              {registerMutation.isPending ? "Creating account..." : "Create account"}
-            </button>
-            <Link className="button button--secondary" to={uiPaths.login}>
-              Back to login
-            </Link>
-          </div>
-        </form>
-      </section>
-    </main>
+    <AuthCard
+      subtitle={
+        <>
+          Or{" "}
+          <Link className="auth-page__link" to={uiPaths.login}>
+            sign in to your existing account
+          </Link>
+        </>
+      }
+      title="Create a new account"
+    >
+      <form className="auth-form" onSubmit={handleSubmit}>
+        {registerMutation.isError ? (
+          <AuthErrorBlock message={getRegisterErrorMessage(registerMutation.error)} />
+        ) : null}
+        <AuthInput
+          autoComplete="username"
+          id="username"
+          label="Username"
+          name="username"
+          onChange={(event) => setUsername(event.target.value)}
+          required
+          type="text"
+          value={username}
+        />
+        <AuthInput
+          autoComplete="email"
+          id="email"
+          label="Email address"
+          name="email"
+          onChange={(event) => setEmail(event.target.value)}
+          required
+          type="email"
+          value={email}
+        />
+        <AuthInput
+          autoComplete="new-password"
+          id="password"
+          label="Password"
+          name="password"
+          onChange={(event) => setPassword(event.target.value)}
+          required
+          type="password"
+          value={password}
+        />
+        <AuthInput
+          autoComplete="new-password"
+          id="confirm_password"
+          label="Confirm Password"
+          name="confirm_password"
+          onChange={(event) => setConfirmPassword(event.target.value)}
+          required
+          type="password"
+          value={confirmPassword}
+        />
+        <div className="auth-actions auth-actions--single">
+          <AuthButton disabled={registerMutation.isPending} type="submit">
+            {registerMutation.isPending ? "Creating account..." : "Create Account"}
+          </AuthButton>
+        </div>
+      </form>
+    </AuthCard>
   );
 }
