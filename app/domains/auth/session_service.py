@@ -16,7 +16,8 @@ def redirect_to_login_response():
 
 
 def format_access_token_cookie_value(access_token: str):
-    return f"{ACCESS_TOKEN_COOKIE_PREFIX}{access_token}"
+    # Store raw token without Bearer prefix to avoid quoted cookie values
+    return access_token
 
 
 def build_login_redirect_response(access_token: str):

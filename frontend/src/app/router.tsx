@@ -16,6 +16,8 @@ import { ProjectsPage } from "@/pages/ProjectsPage";
 import { RegisterPage } from "@/pages/RegisterPage";
 import { StructuringReviewPage } from "@/pages/StructuringReviewPage";
 import { TechnicalReviewPage } from "@/pages/TechnicalReviewPage";
+import { ComingSoonPage } from "@/pages/ComingSoonPage";
+import { ActivitiesPage } from "@/pages/ActivitiesPage";
 import { uiPaths } from "@/utils/appPaths";
 
 function UiRouteLayout() {
@@ -87,6 +89,11 @@ export const router = createBrowserRouter([
         path: "projects/:projectId/chapters/:chapterId/files/:fileId/edit",
         element: <FileEditorPage />,
       },
+      { path: "workflow", element: <ComingSoonPage /> },
+      { path: "files", element: <ComingSoonPage /> },
+      { path: "quality-control", element: <ComingSoonPage /> },
+      { path: "reports", element: <ComingSoonPage /> },
+      { path: "activities", element: <ActivitiesPage /> },
     ],
   },
   {

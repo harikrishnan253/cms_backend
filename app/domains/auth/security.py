@@ -59,7 +59,9 @@ def get_current_user_from_cookie(request: Request, db: Session = Depends(get_db)
     if not token:
         return None
     try:
-        # Remove "Bearer " prefix if present
+        # Remove "Bearer " prefix if present (legacy format)
+        # Also strip surrounding quotes if present
+        token = token.strip('"\'')
         scheme, _, param = token.partition(" ")
         token_str = param if scheme.lower() == "bearer" else token
         

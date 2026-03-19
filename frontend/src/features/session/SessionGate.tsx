@@ -5,7 +5,7 @@ import { getApiErrorMessage } from "@/api/client";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingState } from "@/components/ui/LoadingState";
 import { useSessionBootstrap } from "@/features/session/useSessionBootstrap";
-import { getSsrUrl, ssrPaths, uiPaths } from "@/utils/appPaths";
+import { uiPaths } from "@/utils/appPaths";
 
 export function SessionGate({ children }: PropsWithChildren) {
   const sessionQuery = useSessionBootstrap();
@@ -29,9 +29,6 @@ export function SessionGate({ children }: PropsWithChildren) {
             <button className="button" onClick={() => sessionQuery.refetch()}>
               Retry
             </button>
-            <a className="button button--secondary" href={getSsrUrl(ssrPaths.dashboard)}>
-              Open SSR dashboard
-            </a>
           </>
         }
       />

@@ -76,3 +76,8 @@ export async function deleteChapter(projectId: number, chapterId: number) {
   );
   return response.data;
 }
+
+export async function deleteProject(projectId: number) {
+  const response = await apiClient.delete(`/projects/${projectId}`);
+  return response.data;
+}

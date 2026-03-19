@@ -44,6 +44,7 @@ from app.processing.xml_engine import XMLEngine
 from app.processing.structuring_lib.doc_utils import extract_document_structure, update_document_structure
 from app.processing.structuring_lib.rules_loader import get_rules_loader
 from app.integrations.collabora.config import COLLABORA_PUBLIC_URL, WOPI_BASE_URL
+from app.integrations.wopi import service as wopi_service
 
 settings = get_settings()
 router = APIRouter()
@@ -1127,6 +1128,45 @@ def api_v2_upload_chapter_files(
         ),
     )
 
+
+
+
+@router.get("/files/{file_id}/editor")
+def api_v2_file_editor(
+    file_id: int,
+    db: Session = Depends(database.get_db),
+    user=Depends(get_current_user_from_cookie),
+):
+    """Return Collabora editor URL for a file."""
+    viewer = _require_cookie_user(user)
+    if not viewer:
+        return _error_response(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            code="AUTH_REQUIRED",
+            message="Authentication required.",
+        )
+    import logging as _logging
+    _logging.getLogger("app.editor").warning(f"EDITOR_DEBUG: viewer={viewer}, file_id={file_id}")
+    from app.models import File as _File
+    _test = db.query(_File).filter(_File.id == file_id).first()
+    _logging.getLogger("app.editor").warning(f"EDITOR_DEBUG: direct_query={_test}, path={_test.path if _test else None}")
+    from fastapi import HTTPException as _HTTPException
+    try:
+        page_state = wopi_service.build_editor_page_state(
+            db,
+            file_id=file_id,
+            collabora_public_url=COLLABORA_PUBLIC_URL,
+            wopi_base_url=WOPI_BASE_URL,
+        )
+        return {"collabora_url": page_state["collabora_url"], "filename": page_state["filename"]}
+    except _HTTPException:
+        raise
+    except Exception as e:
+        return _error_response(
+            status_code=status.HTTP_404_NOT_FOUND,
+            code="FILE_NOT_FOUND",
+            message=str(e),
+        )
 
 @router.get("/files/{file_id}/versions", response_model=schemas_v2.FileVersionsResponse)
 def api_v2_file_versions(

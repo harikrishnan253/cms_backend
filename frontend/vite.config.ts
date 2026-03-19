@@ -16,7 +16,7 @@ export default defineConfig(({ mode }) => {
     // with /ui/ so nginx can find them at /var/www/ui/assets/*.
     // In development (npm run dev) the Vite server serves from root, so
     // base stays "/" to keep the dev experience unchanged.
-    base: mode === "production" ? "/ui/" : "/",
+    base: "/",
 
     plugins: [tailwindcss(), react()],
 

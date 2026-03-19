@@ -496,3 +496,28 @@ export interface ProjectBootstrapResponse {
   ingested_files: FileRecord[];
   redirect_to: string;
 }
+
+export interface ActivityEntityRef {
+  title: string;
+}
+
+export interface ActivityItem {
+  id: string;
+  type: string;
+  title: string;
+  description: string;
+  project: ActivityEntityRef;
+  chapter: ActivityEntityRef;
+  category: string;
+  timestamp: string;
+}
+
+export interface ActivitiesSummary {
+  total: number;
+  today: number;
+}
+
+export interface ActivitiesResponse {
+  summary: ActivitiesSummary;
+  activities: ActivityItem[];
+}

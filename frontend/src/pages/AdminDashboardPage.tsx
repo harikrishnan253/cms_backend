@@ -9,7 +9,7 @@ import { SkeletonCard } from "@/components/ui/SkeletonLoader";
 import { AdminStatsGrid } from "@/features/admin/components/AdminStatsGrid";
 import { useAdminDashboardQuery } from "@/features/admin/useAdminDashboardQuery";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
-import { getSsrUrl, ssrPaths, uiPaths } from "@/utils/appPaths";
+import { uiPaths } from "@/utils/appPaths";
 
 export function AdminDashboardPage() {
   useDocumentTitle("Admin — S4 Carlisle CMS");
@@ -49,9 +49,6 @@ export function AdminDashboardPage() {
             <Button variant="primary" onClick={() => void dashboardQuery.refetch()}>
               Retry
             </Button>
-            <a href={getSsrUrl(ssrPaths.adminDashboard)}>
-              <Button variant="secondary">Open SSR admin dashboard</Button>
-            </a>
           </div>
         </div>
       </main>
@@ -101,25 +98,7 @@ export function AdminDashboardPage() {
             </div>
           </div>
 
-          {/* SSR Admin Panel */}
-          <div className="bg-white rounded-lg shadow-card p-6 flex items-start gap-4 hover:shadow-hover transition-all">
-            <div className="w-10 h-10 rounded-md flex items-center justify-center bg-surface-200 shrink-0">
-              <ExternalLink className="w-5 h-5 text-navy-500" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h2 className="font-semibold text-navy-900 text-sm leading-snug">SSR Admin Panel</h2>
-              <p className="text-sm text-navy-500 mt-1 leading-relaxed">
-                Access the legacy server-rendered admin interface
-              </p>
-              <div className="mt-4">
-                <a href={getSsrUrl(ssrPaths.adminDashboard)} target="_blank" rel="noreferrer">
-                  <Button variant="secondary" size="sm" rightIcon={<ExternalLink />}>
-                    Open SSR Admin
-                  </Button>
-                </a>
-              </div>
-            </div>
-          </div>
+          
         </div>
 
         {/* Footer note */}

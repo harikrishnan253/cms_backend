@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import { getSsrUrl } from "@/utils/appPaths";
+
 
 type AuthCardProps = {
   title: string;
@@ -16,7 +16,7 @@ export function AuthCard({ title, subtitle, children }: AuthCardProps) {
           <img
             alt="S4Carlisle Logo"
             className="auth-page__logo"
-            src={getSsrUrl("/static/images/S4c.png")}
+            src="/logo.png"
           />
         </div>
         <h2 className="auth-page__title">{title}</h2>

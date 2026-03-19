@@ -17,7 +17,7 @@ import {
 import { NotificationBell } from "@/features/notifications/components/NotificationBell";
 import { useLogout } from "@/features/session/useLogout";
 import { useSessionStore } from "@/stores/sessionStore";
-import { getSsrUrl, uiPaths } from "@/utils/appPaths";
+import { uiPaths } from "@/utils/appPaths";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -138,31 +138,31 @@ function Sidebar({
     },
     {
       label: "Workflow",
-      to: "/ui/workflow",
+      to: "/workflow",
       icon: <GitBranch className="w-[18px] h-[18px] flex-shrink-0" />,
       end: false,
     },
     {
       label: "Files",
-      to: "/ui/files",
+      to: "/files",
       icon: <Files className="w-[18px] h-[18px] flex-shrink-0" />,
       end: false,
     },
     {
       label: "Quality Control",
-      to: "/ui/quality-control",
+      to: "/quality-control",
       icon: <ShieldCheck className="w-[18px] h-[18px] flex-shrink-0" />,
       end: false,
     },
     {
       label: "Reports",
-      to: "/ui/reports",
+      to: "/reports",
       icon: <BarChart3 className="w-[18px] h-[18px] flex-shrink-0" />,
       end: false,
     },
     {
       label: "Activities",
-      to: "/ui/activities",
+      to: "/activities",
       icon: <Activity className="w-[18px] h-[18px] flex-shrink-0" />,
       end: false,
     },
@@ -196,7 +196,7 @@ function Sidebar({
           <img
             alt="PubCMS logo"
             className="h-8 w-auto object-contain"
-            src={getSsrUrl("/static/images/S4c.png")}
+            src="/logo.png"
             onError={() => setLogoError(true)}
           />
         ) : (

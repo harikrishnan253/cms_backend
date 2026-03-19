@@ -1,22 +1,41 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FolderPlus, FolderOpen, ExternalLink, BookOpen } from "lucide-react";
+import { FolderPlus, FolderOpen, ExternalLink, BookOpen, Trash2 } from "lucide-react";
 
 import { PageHeader } from "@/components/ui/PageHeader";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { SkeletonTable } from "@/components/ui/SkeletonLoader";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { SearchInput } from "@/components/ui/SearchInput";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { deleteProject } from "@/api/projects";
 import { useProjectsQuery } from "@/features/projects/useProjectsQuery";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { uiPaths } from "@/utils/appPaths";
+import { useSessionStore } from "@/stores/sessionStore";
 
 export function ProjectsPage() {
   useDocumentTitle("Projects — S4 Carlisle CMS");
   const navigate = useNavigate();
   const projectsQuery = useProjectsQuery(0, 100);
+  const queryClient = useQueryClient();
+  const viewer = useSessionStore((s) => s.viewer);
+  const canDelete = viewer?.roles?.some((r) => ["Admin", "ProjectManager"].includes(r)) ?? false;
+
+  const deleteMutation = useMutation({
+    mutationFn: (projectId: number) => deleteProject(projectId),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["projects"] }),
+    onError: () => alert("Failed to delete project."),
+  });
+
+  const handleDelete = (e: React.MouseEvent, projectId: number, title: string) => {
+    e.stopPropagation();
+    setDeleteTarget({ id: projectId, title });
+  };
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<{ id: number; title: string } | null>(null);
 
   const projects = projectsQuery.data?.projects ?? [];
   const total = projectsQuery.data?.pagination.total ?? 0;
@@ -193,6 +212,18 @@ export function ProjectsPage() {
                         <BookOpen className="w-3.5 h-3.5" aria-hidden="true" />
                         <span className="sr-only">Open {project.title} in editor</span>
                       </button>
+                      {canDelete && (
+                        <button
+                          type="button"
+                          title="Delete project"
+                          className="w-7 h-7 rounded flex items-center justify-center text-navy-500 hover:bg-red-50 hover:text-red-600 transition-colors"
+                          onClick={(e) => handleDelete(e, project.id, project.title)}
+                          disabled={deleteMutation.isPending}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
+                          <span className="sr-only">Delete {project.title}</span>
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -201,6 +232,20 @@ export function ProjectsPage() {
           </table>
         )}
       </div>
+          <ConfirmDialog
+        isOpen={deleteTarget !== null}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={() => {
+          if (deleteTarget) deleteMutation.mutate(deleteTarget.id);
+          setDeleteTarget(null);
+        }}
+        title="Delete Project"
+        description={`Are you sure you want to delete "${deleteTarget?.title}"? This will permanently remove all chapters and files.`}
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        variant="danger"
+        isLoading={deleteMutation.isPending}
+      />
     </main>
   );
 }

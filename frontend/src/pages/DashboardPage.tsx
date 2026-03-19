@@ -8,8 +8,7 @@ import { DashboardProjectGrid } from "@/features/dashboard/components/DashboardP
 import { DashboardStatsGrid } from "@/features/dashboard/components/DashboardStatsGrid";
 import { useDashboardQuery } from "@/features/dashboard/useDashboardQuery";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
-import { getSsrUrl, ssrPaths, uiPaths } from "@/utils/appPaths";
-// getSsrUrl / ssrPaths kept only for DashboardError's "Open SSR dashboard" fallback.
+import { uiPaths } from "@/utils/appPaths";
 
 /* ─── Loading skeleton ─────────────────────────────────────────────────────── */
 function DashboardSkeleton() {
@@ -63,12 +62,6 @@ function DashboardError({ onRetry }: { onRetry: () => void }) {
           >
             Retry
           </button>
-          <a
-            className="bg-white border border-surface-400 text-navy-700 hover:bg-surface-100 font-medium px-4 py-2 rounded-md text-sm transition-colors"
-            href={getSsrUrl(ssrPaths.dashboard)}
-          >
-            Open SSR dashboard
-          </a>
         </div>
       </div>
     </main>

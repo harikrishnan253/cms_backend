@@ -1,31 +1,31 @@
 export const uiPaths = {
-  root: "/ui",
-  login: "/ui/login",
-  register: "/ui/register",
-  dashboard: "/ui/dashboard",
-  adminDashboard: "/ui/admin",
-  adminUsers: "/ui/admin/users",
-  projects: "/ui/projects",
-  projectCreate: "/ui/projects/create",
-  projectDetail: (projectId: number | string) => `/ui/projects/${projectId}`,
-  projectEditor: (projectId: number | string) => `/ui/editor/${projectId}`,
+  root: "/",
+  login: "/login",
+  register: "/register",
+  dashboard: "/dashboard",
+  adminDashboard: "/admin",
+  adminUsers: "/admin/users",
+  projects: "/projects",
+  projectCreate: "/projects/create",
+  projectDetail: (projectId: number | string) => `/projects/${projectId}`,
+  projectEditor: (projectId: number | string) => `/editor/${projectId}`,
   chapterDetail: (projectId: number | string, chapterId: number | string) =>
-    `/ui/projects/${projectId}/chapters/${chapterId}`,
+    `/projects/${projectId}/chapters/${chapterId}`,
   technicalReview: (
     projectId: number | string,
     chapterId: number | string,
     fileId: number | string,
-  ) => `/ui/projects/${projectId}/chapters/${chapterId}/files/${fileId}/technical-review`,
+  ) => `/projects/${projectId}/chapters/${chapterId}/files/${fileId}/technical-review`,
   structuringReview: (
     projectId: number | string,
     chapterId: number | string,
     fileId: number | string,
-  ) => `/ui/projects/${projectId}/chapters/${chapterId}/files/${fileId}/structuring-review`,
+  ) => `/projects/${projectId}/chapters/${chapterId}/files/${fileId}/structuring-review`,
   fileEditor: (
     projectId: number | string,
     chapterId: number | string,
     fileId: number | string,
-  ) => `/ui/projects/${projectId}/chapters/${chapterId}/files/${fileId}/edit`,
+  ) => `/projects/${projectId}/chapters/${chapterId}/files/${fileId}/edit`,
 } as const;
 
 export const ssrPaths = {
