@@ -30,6 +30,12 @@ else:
     SQLALCHEMY_DATABASE_URI = f"sqlite:///{DATABASE_PATH}"
 
 SQLALCHEMY_TRACK_MODIFICATIONS = False
+SQLALCHEMY_ENGINE_OPTIONS = {
+    "pool_pre_ping": True,
+    "pool_recycle": 300,
+    "pool_size": 5,
+    "max_overflow": 10,
+}
 
 # API Keys
 GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY', '')
