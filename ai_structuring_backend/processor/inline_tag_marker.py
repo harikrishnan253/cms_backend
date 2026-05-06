@@ -50,13 +50,19 @@ INLINE_TAG_MARKER_RE = re.compile(
     re.IGNORECASE | re.DOTALL,
 )
 
-# Uppercase-only marker prefix — used by :mod:`structure_guard` and
-# :mod:`integrity` to strip an authoritative marker from comparison text
+# Authoritative-marker prefix — used by :mod:`structure_guard` and
+# :mod:`integrity` to strip an inline tag marker from comparison text
 # (reconstruction's marker strip is a legal style-only mutation, not a
-# content change). Lowercase structural fences ("<body-open>") stay
-# intact — those are deliberately preserved by the engine.
+# content change).
+#
+# Case-insensitive to mirror :data:`INLINE_TAG_MARKER_RE`, since authors
+# occasionally write lowercase markers (e.g. "<h2>Central Nervous System"
+# in `for table.docx`). The trailing ``(?=\S)`` lookahead requires
+# non-whitespace content after the marker, so structural fences that
+# appear alone on a paragraph ("<body-open>", "<front-close>") still
+# survive normalization — those are deliberately preserved by the engine.
 LEADING_INLINE_TAG_MARKER_RE = re.compile(
-    r"^\s*<[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)*>\s?",
+    r"^\s*<[A-Za-z][A-Za-z0-9]*(?:-[A-Za-z0-9]+)*>\s?(?=\S)",
 )
 
 
