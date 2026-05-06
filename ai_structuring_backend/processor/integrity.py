@@ -38,6 +38,8 @@ KNOWN_MARKERS = {
 
 _MARKER_ONLY_TOKEN_RE = re.compile(r"^\s*</?[A-Za-z][A-Za-z0-9._ -]*>\s*$")
 
+from .inline_tag_marker import LEADING_INLINE_TAG_MARKER_RE as _LEADING_INLINE_TAG_MARKER_RE
+
 
 def _para_diag_snapshot(para_info: Dict | None) -> Dict | None:
     """Compact paragraph snapshot for first-difference diagnostics."""
@@ -113,6 +115,10 @@ def _normalize_text(text: str) -> str:
     # Remove known marker tokens
     for marker in KNOWN_MARKERS:
         text = text.replace(marker, '')
+
+    # Strip a leading authoritative inline tag marker so the integrity
+    # check is blind to whether reconstruction removed it.
+    text = _LEADING_INLINE_TAG_MARKER_RE.sub("", text, count=1)
 
     # Collapse whitespace
     text = re.sub(r'\s+', ' ', text)

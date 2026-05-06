@@ -161,6 +161,15 @@ def normalize_table_cell_positions(
         if len(bid_list) < 2:
             continue  # Single-paragraph cell → nothing to do
 
+        # Skip if any paragraph in this cell was authoritatively tagged via
+        # an inline marker (e.g. "<TBL-MID>1. Foo"). The author asserted
+        # the position; we must not promote to FIRST/LAST.
+        if any(
+            block_by_id.get(bid, {}).get("_inline_tag_override")
+            for bid in bid_list
+        ):
+            continue
+
         # Skip if any paragraph already has positional TBL-FIRST/LAST style.
         if any(
             clf_by_id.get(bid, {}).get("tag") in _POSITIONAL_STYLES
@@ -246,6 +255,14 @@ def normalize_table_cell_positions(
 
             meta = block.get("metadata", {})
             tag = clf.get("tag")
+            # Honor authoritative inline tag overrides — author asserted
+            # the position; do not promote to FIRST/LAST.
+            if block.get("_inline_tag_override"):
+                if run:
+                    paragraphs_relabeled += _relabel_positional_run(run, clf_by_id, key_for_log=("col", key))
+                    any_run_in_group = any_run_in_group or len(run) >= 2
+                    run = []
+                continue
             eligible = _has_list_indicator(meta) and tag in _FLAT_T_FAMILY
 
             if eligible:

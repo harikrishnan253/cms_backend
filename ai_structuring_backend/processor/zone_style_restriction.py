@@ -309,6 +309,13 @@ def enforce_zone_style_restrictions(
         meta = block.get("metadata", {})
         zone = meta.get("context_zone", "BODY")
 
+        # Author-asserted inline tag overrides win over zone restrictions —
+        # explicit "<REF-H1>", "<FIG-LEG>", "<TSN>" markers in or near a
+        # reference zone must survive even when the zone fallback would
+        # otherwise downgrade them.
+        if block.get("_inline_tag_override"):
+            continue
+
         # Check if style is globally valid (exists in vocabulary)
         is_globally_valid = current_tag in allowed_styles_normalized
 

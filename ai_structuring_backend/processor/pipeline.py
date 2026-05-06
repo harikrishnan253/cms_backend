@@ -12,6 +12,11 @@ from typing import Callable, Optional
 
 from .blocks import extract_blocks
 from .classifier import classify_blocks_with_prompt
+from .content_zones import (
+    detect_content_zones,
+    apply_content_zone_overlays,
+    apply_roman_outline_overlays,
+)
 from .reconstruction import DocumentReconstructor
 from .confidence import ConfidenceFilter
 from .validator import validate_and_repair
@@ -25,6 +30,7 @@ from .ref_numbering import normalize_reference_numbering
 from .table_title_rules import enforce_table_title_rules
 from .list_hierarchy import enforce_list_hierarchy_from_word_xml
 from .marker_lock import lock_marker_blocks, relock_marker_classifications
+from .inline_tag_marker import lock_inline_tag_blocks
 from .zone_style_restriction import (
     restrict_allowed_styles_per_zone,
     enforce_zone_style_restrictions,
@@ -58,6 +64,30 @@ _PIPELINE_BLOCK_STAGE_POLICY = BlockTransformPolicy(
     allow_text_changes=True,
     stage_type="pipeline_block_stage",
 )
+
+
+def _unique_output_base(processed_dir: Path, base_name: str, max_attempts: int = 99) -> str:
+    """Return a base name whose ``{base_name}_processed.docx`` does not collide.
+
+    When re-running the engine on the same input, the original output files
+    would otherwise be overwritten. On collision, append ``_v2``, ``_v3`` … up
+    to ``max_attempts``. The same suffix is reused for the review / json /
+    html companion files so the four outputs for a run stay grouped.
+    """
+    if not (processed_dir / f"{base_name}_processed.docx").exists():
+        return base_name
+    for i in range(2, max_attempts + 1):
+        candidate = f"{base_name}_v{i}"
+        if not (processed_dir / f"{candidate}_processed.docx").exists():
+            logger.info(
+                "OUTPUT_NAME_DEDUP: %s_processed.docx already exists, writing as %s_processed.docx",
+                base_name, candidate,
+            )
+            return candidate
+    raise RuntimeError(
+        f"Could not allocate unique output filename for {base_name!r} in "
+        f"{processed_dir} after {max_attempts} attempts"
+    )
 
 
 def _run_block_transform_stage(stage_name: str, fn, blocks: list[dict], *args, policy=None, **kwargs) -> list[dict]:
@@ -107,13 +137,32 @@ def process_document(
     # Stage 1: Ingestion
     logger.info("Stage 1: Document Ingestion (Blocks + Structural Features)")
     blocks, paragraphs, stats = extract_blocks(input_path)
-    
+
+    # Allowed styles loaded once, used by both the inline-tag lock below and
+    # later validator/overlay stages.
+    allowed_styles = load_allowed_styles()
+
     # Stage 1b: Deterministic pre-classification locks (before LLM)
     blocks = _run_block_transform_stage("marker_lock", lock_marker_blocks, blocks, policy=STYLE_TAG_ONLY_POLICY)
+    # Inline tag marker lock: paragraphs starting with <TAG>content where TAG
+    # is in allowed_styles (e.g. <CJC-TTL>Foo, <T2>System) bypass the LLM and
+    # adopt the asserted tag deterministically.
+    blocks = _run_block_transform_stage(
+        "inline_tag_marker_lock",
+        lambda b: lock_inline_tag_blocks(b, allowed_styles),
+        blocks,
+        policy=STYLE_TAG_ONLY_POLICY,
+    )
     blocks = _run_block_transform_stage("table_title_rules", enforce_table_title_rules, blocks)
     blocks = _run_block_transform_stage("reference_numbering_pre", normalize_reference_numbering, blocks)
     blocks = _run_block_transform_stage("list_hierarchy_lock", enforce_list_hierarchy_from_word_xml, blocks)
     blocks = _run_block_transform_stage("zone_style_restriction", restrict_allowed_styles_per_zone, blocks)
+
+    # Stage 1c: Content-driven zone detection (Case Study, Objectives, Key
+    # Terms, Key Points, EOC, Post-References). Annotates each block's
+    # metadata with `content_zone` and `content_zone_role`; consumed by the
+    # overlay pass after classification to produce zone-qualified tags.
+    detect_content_zones(blocks)
 
     # Stage 2: Classification (Option 2 retry ladder)
     logger.info("Stage 2: AI Classification")
@@ -122,8 +171,6 @@ def process_document(
     quality_score = None
     quality_action = None
     quality_metrics = {}
-
-    allowed_styles = load_allowed_styles()
 
     if classifier_override:
         classifications = classifier_override(blocks, paragraphs)
@@ -280,6 +327,16 @@ def process_document(
                 continue
             break
 
+    # Apply content-driven zone overlays (CS-*, EOC-*, OBJ-*, KT-*, KP-*,
+    # post-References PMI). Runs once after both classifier branches have
+    # produced the validator's final classifications, so the trace below
+    # captures the post-overlay tags.
+    classifications = apply_content_zone_overlays(classifications, blocks, allowed_styles)
+    # Roman-numeral marker -> OUT1 outline family. Runs after zone overlays
+    # so that a roman-numeral list inside e.g. an EOC zone still gets the
+    # outline tag (zone overlays don't touch OUT-* tags).
+    classifications = apply_roman_outline_overlays(classifications, blocks, allowed_styles)
+
     # Diagnostics: emit STYLE_TAG_TRACE when STYLE_TRACE=1
     emit_style_tag_trace(input_path.name, blocks, classifications)
 
@@ -298,22 +355,34 @@ def process_document(
         allowed_styles=allowed_styles,
     )
 
-    # Preserve lightweight zone metadata for reconstruction-time review highlighting.
-    block_meta_by_id = {b["id"]: (b.get("metadata") or {}) for b in blocks}
+    # Preserve lightweight zone metadata for reconstruction-time review
+    # highlighting, and restore inline-marker info dropped by the
+    # ConfidenceFilter -> ClassificationResult dataclass round-trip so
+    # reconstruction can strip the leading "<TAG>" prefix from output text.
+    block_by_id = {b["id"]: b for b in blocks}
     for clf in classifications:
-        meta = block_meta_by_id.get(clf.get("id"), {})
-        if not meta:
+        block = block_by_id.get(clf.get("id"))
+        if block is None:
             continue
-        clf["context_zone"] = meta.get("context_zone")
-        clf["is_reference_zone"] = bool(meta.get("is_reference_zone"))
+        meta = block.get("metadata") or {}
+        if meta:
+            clf["context_zone"] = meta.get("context_zone")
+            clf["is_reference_zone"] = bool(meta.get("is_reference_zone"))
+        if block.get("_inline_tag_override"):
+            clf["_inline_tag_override"] = block["_inline_tag_override"]
+            clf["_inline_tag_marker"] = block.get("_inline_tag_marker") or ""
 
     # Stage 5: Reconstruction
     logger.info("Stage 5: Document Reconstruction")
     
-    # Generate output filenames
-    base_name = input_path.stem
+    # Generate output filenames — dedup against existing files in the
+    # processed/ subfolder so re-running on the same input does not clobber
+    # prior outputs.
+    processed_dir = output_folder / "processed"
+    processed_dir.mkdir(parents=True, exist_ok=True)
+    base_name = _unique_output_base(processed_dir, input_path.stem)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    
+
     output_name = f"{base_name}_processed.docx"
     review_name = f"{base_name}_processed_review.docx"
     json_name = f"{base_name}_processed_results.json"

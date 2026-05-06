@@ -20,8 +20,11 @@ _COMPACT_BULLET_LIST_RE = re.compile(r"^BULLETLIST(\d+)(FIRST|LAST)?$")
 _COMPACT_NUMBER_LIST_RE = re.compile(r"^NUMBERLIST(\d+)(FIRST|LAST)?$")
 _COMPACT_UNNUMBERED_LIST_RE = re.compile(r"^(?:UNNUMBEREDLIST|UNLIST)(\d+)(FIRST|LAST)?$")
 
-# Illegal prefixes that should be stripped (except SK_H1-SK_H6 and TBL-H1-TBL-H6 which map to TH1-TH6)
-ILLEGAL_PREFIXES = ["BX4-", "NBX1-"]
+# Prefixes previously stripped as "illegal". BX4-* and NBX1-* are in fact
+# legitimate canonical / house-overlay families (the validator's zone path
+# promotes numeric tags like "2-TTL" to "BX2-TTL" and expects "BX4-TXT" to
+# survive normalization), so leave them intact. SK_H/TBL-H still map below.
+ILLEGAL_PREFIXES: list[str] = []
 SK_H_PATTERN = re.compile(r"^SK_H([1-6])$")
 TBL_H_PATTERN = re.compile(r"^TBL-H([1-6])$")
 
@@ -312,8 +315,15 @@ def normalize_style(name: str, meta: dict | None = None, enforce_membership: boo
         if text.endswith(suffix):
             base = text[: -len(suffix)]
             # Preserve positional suffixes for nested list families such as
-            # BL2-MID, TBL3-MID, KT-BL2-MID, BX4-NL2-MID.
-            if base not in LIST_BASES and not LIST_BASE_FAMILY_RE.search(base):
+            # BL2-MID, TBL3-MID, KT-BL2-MID, BX4-NL2-MID, and for any tag
+            # already present in allowed_styles (e.g. DIA-MID — dialogue is
+            # a canonical family with -FIRST/-MID/-LAST that would otherwise
+            # look like an illegal suffix on a non-list base "DIA").
+            if (
+                base not in LIST_BASES
+                and not LIST_BASE_FAMILY_RE.search(base)
+                and text not in _ALLOWED_STYLES
+            ):
                 text = base
             break
 

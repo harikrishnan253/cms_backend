@@ -29,11 +29,36 @@ from collections import Counter, defaultdict
 logger = logging.getLogger(__name__)
 
 _MISSING_RULES_LOGGED_PATHS: set[str] = set()
+# One-shot global guard so a missing rules file produces a single WARNING
+# across all RuleLearner instances in a process (tests + production).
+_MISSING_RULES_WARNED: bool = False
 
 # Paths
 DATA_DIR = Path(__file__).parent.parent / "data"
 GROUND_TRUTH_PATH = DATA_DIR / "ground_truth.jsonl"
 LEARNED_RULES_PATH = DATA_DIR / "learned_rules.json"
+
+
+def initialize_learned_rules_file(
+    path: Optional[Path] = None,
+    force: bool = False,
+) -> Path:
+    """Create an empty learned-rules JSON file at ``path``.
+
+    The written schema is ``{"rules": [], "num_rules": 0, "tag_stats": {}}``.
+    Existing files are preserved unless ``force=True``.
+
+    Returns the path written.
+    """
+    target = Path(path) if path is not None else LEARNED_RULES_PATH
+    target.parent.mkdir(parents=True, exist_ok=True)
+    if target.exists() and not force:
+        return target
+    target.write_text(
+        json.dumps({"rules": [], "num_rules": 0, "tag_stats": {}}),
+        encoding="utf-8",
+    )
+    return target
 ALLOWED_STYLES_PATH = Path(__file__).parent.parent / "config" / "allowed_styles.json"
 SEMANTIC_KNOWLEDGE_PATH = DATA_DIR / "tag_semantics_knowledge.json"
 SEMANTIC_TRANSITIONS_PATH = DATA_DIR / "tag_transition_priors.json"
@@ -650,7 +675,8 @@ class RuleLearner:
     def load_rules(self, path: Optional[Path] = None, required: Optional[bool] = None) -> bool:
         """Load rules from JSON file."""
         if path is None:
-            path = LEARNED_RULES_PATH
+            env_override = os.getenv("LEARNED_RULES_PATH")
+            path = Path(env_override) if env_override else LEARNED_RULES_PATH
         if required is None:
             required = learned_rules_required()
 
@@ -664,10 +690,13 @@ class RuleLearner:
                 logger.error("%s (required by REQUIRE_LEARNED_RULES=true)", msg)
                 raise MissingLearnedRulesError(msg)
 
-            path_key = str(path.resolve()) if path.is_absolute() else str(path)
-            if path_key not in _MISSING_RULES_LOGGED_PATHS:
-                _MISSING_RULES_LOGGED_PATHS.add(path_key)
-                logger.info("%s (optional; proceeding without learned rules)", msg)
+            global _MISSING_RULES_WARNED
+            if not _MISSING_RULES_WARNED:
+                _MISSING_RULES_WARNED = True
+                logger.warning(
+                    "%s — learned_rules disabled; using heuristics/LLM only",
+                    msg,
+                )
             else:
                 logger.debug("%s (optional; already reported)", msg)
             return False

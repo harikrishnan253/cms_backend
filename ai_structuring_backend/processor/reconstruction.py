@@ -125,9 +125,14 @@ STYLE_DEFINITIONS = {
     "EOC-LL2-MID": {"font_size": 11, "left_indent": 0.75, "space_after": 2},
 
     # Tables - Titles
-    "T1": {"font_size": 10, "bold": True, "space_before": 6, "space_after": 2},
-    "T11": {"font_size": 10, "bold": True, "space_before": 6, "space_after": 2},
-    "T12": {"font_size": 10, "bold": True, "space_before": 6, "space_after": 2},
+    # bold:True deliberately omitted so the caption style does not force bold
+    # on captions whose source runs are not bold. Runs that ARE explicitly
+    # bold in the source remain bold; runs that are not stay un-bold. This
+    # matches publisher feedback: "ALSO Bold added table captions" was a
+    # complaint about the engine adding bold that wasn't in the source.
+    "T1": {"font_size": 10, "space_before": 6, "space_after": 2},
+    "T11": {"font_size": 10, "space_before": 6, "space_after": 2},
+    "T12": {"font_size": 10, "space_before": 6, "space_after": 2},
 
     # Tables - Headers
     "T2": {"font_size": 10, "bold": True, "alignment": "center"},
@@ -159,7 +164,12 @@ STYLE_DEFINITIONS = {
 
     # Figures
     "FIG-LEG": {"font_size": 10, "space_before": 6, "space_after": 6},
-    "PMI": {"font_size": 9, "italic": True},
+    # PMI is a house overlay, not a canonical WK tag. The previous default
+    # baked italic:True into the style, which then propagated to inline
+    # references like <TAB 3-1> when post-References table captions were
+    # promoted T1 -> PMI by the content-zone overlay. Source runs control
+    # their own italic now; the engine only sets PMI's font size.
+    "PMI": {"font_size": 9},
 
     # References
     "REF-N": {"font_size": 10, "hanging_indent": 0.5, "space_after": 2},
@@ -455,6 +465,79 @@ def ensure_numbering(para, list_kind: str, level: int, doc) -> None:
     numId_elm = OxmlElement("w:numId")
     numId_elm.set(qn("w:val"), str(num_id))
     numPr.append(numId_elm)
+
+
+def _strip_inline_marker_prefix(para, marker: str) -> bool:
+    """Remove the leading ``marker`` substring from *para*'s first run.
+
+    When the author writes ``<CJC-TTL>Foo`` and the engine has consumed the
+    marker as an authoritative tag override, the marker text must not
+    appear in the reconstructed body. We modify the first run that
+    contains the marker so its remaining text starts at the post-marker
+    content.
+
+    Returns True if a strip happened, False otherwise.
+
+    Edge cases handled:
+    - Leading whitespace before the marker is preserved up to the marker
+      position; runs are scanned in order until the marker is found.
+    - One trailing space immediately after the marker is also removed.
+    - If the marker spans multiple runs (rare — author typed it as a single
+      stretch but Word split it), the helper returns False without
+      modifying anything (defensive). The marker will remain in output.
+    """
+    if not marker or not para.runs:
+        return False
+    cumulative = ""
+    for run_idx, run in enumerate(para.runs):
+        run_text = run.text or ""
+        cumulative_with_run = cumulative + run_text
+        # Search for the marker starting anywhere in the joined text up to
+        # this point. The marker should be at the very beginning of
+        # non-whitespace content per the regex used to detect it.
+        idx = cumulative_with_run.find(marker)
+        if idx < 0:
+            cumulative = cumulative_with_run
+            continue
+        # Only treat as a leading marker if everything before it is
+        # whitespace. Otherwise some run contains literal "<CJC-TTL>"
+        # mid-text — leave it alone.
+        if cumulative_with_run[:idx].strip():
+            return False
+        end = idx + len(marker)
+        # Strip a single trailing space if present.
+        if end < len(cumulative_with_run) and cumulative_with_run[end] == " ":
+            end += 1
+        # If the marker (and trailing space) lie entirely within this run,
+        # rewrite this run only.
+        run_start_in_cumulative = len(cumulative)
+        if idx >= run_start_in_cumulative and end <= run_start_in_cumulative + len(run_text):
+            local_start = idx - run_start_in_cumulative
+            local_end = end - run_start_in_cumulative
+            run.text = run_text[:local_start] + run_text[local_end:]
+            return True
+        # Marker spans this run and earlier runs — clear earlier runs'
+        # contribution to the marker, then trim this run's prefix.
+        # Build a list of (run, slice_to_keep) and apply.
+        pos = 0
+        for prev_idx in range(run_idx + 1):
+            prev_run = para.runs[prev_idx]
+            prev_text = prev_run.text or ""
+            prev_start = pos
+            prev_end = pos + len(prev_text)
+            kept = ""
+            if prev_end <= idx:
+                kept = prev_text  # entirely before marker
+            elif prev_start >= end:
+                kept = prev_text  # entirely after marker
+            else:
+                head = prev_text[: max(0, idx - prev_start)] if idx > prev_start else ""
+                tail = prev_text[max(0, end - prev_start) :] if end < prev_end else ""
+                kept = head + tail
+            prev_run.text = kept
+            pos = prev_end
+        return True
+    return False
 
 
 class DocumentReconstructor:
@@ -809,6 +892,12 @@ class DocumentReconstructor:
                     source_is_list=source_is_list,
                     source_has_numpr=source_has_numpr,
                 )
+                # Author-asserted inline tag marker: strip the leading
+                # "<TAG>" prefix from the output text now that the engine
+                # has consumed it as an authoritative style override.
+                marker = clf.get("_inline_tag_marker")
+                if marker:
+                    _strip_inline_marker_prefix(para, marker)
                 # Table-related body paragraphs (captions, footnotes, source notes)
                 # use the configurable table threshold; all others use the general < 85.
                 if tag in _TABLE_RELATED_BODY_TAGS:
@@ -848,6 +937,10 @@ class DocumentReconstructor:
                     source_is_list=source_is_list,
                     source_has_numpr=source_has_numpr,
                 )
+                # Author-asserted inline tag marker — strip from output text.
+                marker = clf.get("_inline_tag_marker")
+                if marker:
+                    _strip_inline_marker_prefix(para, marker)
                 # All in-table paragraphs use the configurable table threshold.
                 if conf < _tbl_thresh:
                     self._highlight_for_review(para)

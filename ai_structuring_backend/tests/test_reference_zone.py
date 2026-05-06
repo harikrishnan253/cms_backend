@@ -20,8 +20,8 @@ def test_reference_zone_ul_to_ref_u():
         {"id": 3, "tag": "UL-MID", "confidence": 0.8},
     ]
     repaired = validate_and_repair(classifications, blocks, allowed_styles={"REF-U", "REF-N", "REF-TXT", "H1"})
-    assert repaired[1]["tag"] == "REF-N"
-    assert repaired[2]["tag"] == "REF-N"
+    assert repaired[1]["tag"] == "REF-U"
+    assert repaired[2]["tag"] == "REF-U"
 
 
 def test_reference_zone_bullet_entry_to_ref_u():

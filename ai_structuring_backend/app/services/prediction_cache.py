@@ -69,13 +69,25 @@ class PredictionCache:
         doc_id: str,
         para_index: int,
         text: str,
-        zone: str = "BODY"
+        zone: str = "BODY",
+        key_context: dict[str, Any] | None = None,
     ) -> str:
-        """Generate cache key from inputs."""
+        """Generate cache key from inputs.
+
+        When ``key_context`` is provided, its stable JSON serialization is
+        folded into the key so that changes to model, prompt hashes,
+        allowed_styles hash, etc. cause cache misses. Callers that do not
+        pass ``key_context`` continue to get the pre-existing document +
+        paragraph + zone keying behavior.
+        """
         normalized = self._normalize_text(text)
 
         # Create composite key
         key_data = f"{doc_id}:{para_index}:{normalized}:{zone}"
+
+        if key_context:
+            ctx_repr = json.dumps(key_context, sort_keys=True, default=str)
+            key_data = f"{key_data}:{ctx_repr}"
 
         # Hash for compact key
         key_hash = hashlib.sha256(key_data.encode()).hexdigest()[:16]
@@ -87,7 +99,8 @@ class PredictionCache:
         doc_id: str,
         para_index: int,
         text: str,
-        zone: str = "BODY"
+        zone: str = "BODY",
+        key_context: dict[str, Any] | None = None,
     ) -> dict[str, Any] | None:
         """
         Get cached prediction if available.
@@ -95,7 +108,7 @@ class PredictionCache:
         Returns:
             Cached prediction dict or None if not found/expired
         """
-        key = self._generate_key(doc_id, para_index, text, zone)
+        key = self._generate_key(doc_id, para_index, text, zone, key_context=key_context)
 
         # Check memory cache first
         if key in self.memory_cache:
@@ -136,7 +149,8 @@ class PredictionCache:
         para_index: int,
         text: str,
         prediction: dict[str, Any],
-        zone: str = "BODY"
+        zone: str = "BODY",
+        key_context: dict[str, Any] | None = None,
     ):
         """
         Cache a prediction.
@@ -147,8 +161,12 @@ class PredictionCache:
             text: Paragraph text
             prediction: Prediction dict with tag, confidence, etc.
             zone: Context zone
+            key_context: Optional dict of environment signals (model name,
+                prompt hashes, allowed_styles hash, ...) that must match at
+                get-time for a cache hit. Entries written with different
+                contexts produce different keys.
         """
-        key = self._generate_key(doc_id, para_index, text, zone)
+        key = self._generate_key(doc_id, para_index, text, zone, key_context=key_context)
 
         entry = {
             "prediction": prediction,

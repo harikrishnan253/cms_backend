@@ -65,3 +65,9 @@ docker-compose.yml.bak
 
 # Runtime volume path (on-premise deploy)
 /opt/cms_runtime/
+
+# Internal QA corpus — publisher IP, do not commit
+/Tag files/
+/Tagged/
+.feedback_extract.txt
+.corpus_styles.txt

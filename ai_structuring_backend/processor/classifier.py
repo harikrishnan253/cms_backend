@@ -17,6 +17,7 @@ from typing import Optional
 
 from .llm_client import GeminiClient
 from .style_list import ALLOWED_STYLES
+from app.services.allowed_styles import load_allowed_styles as get_allowed_styles
 from app.services.style_normalizer import normalize_style, normalize_tag
 from app.services.grounded_retriever import (
     get_retriever,
@@ -686,17 +687,20 @@ class GeminiClassifier:
 
     def _build_skip_llm_result(self, paragraph: dict) -> dict:
         """Return a deterministic classification for blocks explicitly excluded from LLM."""
+        from .inline_tag_marker import propagate_inline_marker_info
         allowed = paragraph.get("allowed_styles") or []
         tag = str(allowed[0]).strip() if allowed else "PMI"
         if not tag:
             tag = "PMI"
-        return {
+        result = {
             "id": paragraph.get("id"),
             "tag": tag,
             "confidence": 99,
             "gated": True,
             "gate_rule": "skip-llm",
         }
+        propagate_inline_marker_info(paragraph, result)
+        return result
     
     def _apply_rules(
         self,
@@ -2070,14 +2074,17 @@ Return a JSON array with your classifications for all {len(batch)} items:
 
         if last_usage:
             # Format token values, handling None gracefully
+            def _fmt_tok(v):
+                return f"{v:,}" if isinstance(v, int) else "n/a"
+
             input_tok = last_usage.get('input_tokens')
             output_tok = last_usage.get('output_tokens')
             total_tok = last_usage.get('total_tokens')
 
             logger.info(
-                f"Token Usage - Input: {input_tok:,}, "
-                f"Output: {output_tok:,}, "
-                f"Total: {total_tok:,}"
+                f"Token Usage - Input: {_fmt_tok(input_tok)}, "
+                f"Output: {_fmt_tok(output_tok)}, "
+                f"Total: {_fmt_tok(total_tok)}"
             )
 
             # Format cumulative values, handling None gracefully

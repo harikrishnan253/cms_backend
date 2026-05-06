@@ -498,10 +498,21 @@ def validate_and_repair(
     allowed_styles: Iterable[str] | None = None,
     preserve_lists: bool = False,
     preserve_marker_pmi: bool = False,
+    llm_required: bool = False,
 ) -> list[dict]:
     """
     Validate and repair classification results based on deterministic rules.
+
+    When ``llm_required=True`` is passed, the function raises ``ValueError``
+    if any input tag was invalid (i.e. outside ``allowed_styles``) — callers
+    use this to force an explicit LLM re-classification instead of silently
+    accepting a heuristic fallback repair.
     """
+    from collections import Counter
+
+    # Tag distribution before any repair, for observability.
+    _before_tags = Counter(str(c.get("tag", "")) for c in classifications)
+
     # Metrics tracking for STYLE_CANONICALIZATION logging
     metrics = {
         "invalid_styles": 0,      # Styles not in allowed_styles
@@ -539,6 +550,17 @@ def validate_and_repair(
         tag = clf.get("tag", "TXT")
         original_input_tag = tag  # Preserve original for table heading map lookup
         confidence = clf.get("confidence", 85)
+        # Normalize confidence to a 0.0-1.0 scale. Callers historically pass
+        # either an integer percentage (85) or a float fraction (0.85); without
+        # this normalization, `confidence >= 0.90` would be True for any
+        # percentage-scale input and cause tags to be locked regardless of
+        # real confidence — blocking the semantic-list and zone alignment
+        # passes from ever running.
+        try:
+            if confidence is not None and float(confidence) > 1.0:
+                confidence = float(confidence) / 100.0
+        except (TypeError, ValueError):
+            confidence = 0.0
         reason = clf.get("reasoning")
 
         block = block_lookup.get(para_id, {})
@@ -561,6 +583,19 @@ def validate_and_repair(
         change_reason = []
         original_tag = norm_tag
         came_from_h4h5 = False
+
+        # Author-asserted inline tag marker (e.g. "<CJC-TTL>Foo"): the
+        # pre-classification lock already populated allowed_styles + skip_llm,
+        # so the classifier emitted the asserted tag at confidence 99. Hard
+        # lock it here so no downstream repair pass rewrites the override.
+        inline_override = block.get("_inline_tag_override")
+        if inline_override:
+            if tag != inline_override:
+                tag = inline_override
+                norm_tag = normalize_style(tag, meta=meta)
+                changed = True
+                change_reason.append("inline-tag-override")
+            lock_tag = True
 
         # Composite tag detection and repair (before canonicalization)
         if not lock_tag and _is_composite_tag(tag):
@@ -674,7 +709,15 @@ def validate_and_repair(
                     change_reason.append("box-title")
 
         # Reference zone enforcement (initial pass)
-        if para_id in reference_zone_ids and lock_tag and not norm_tag.startswith("REF-"):
+        # Skip the unlock if the author asserted the tag inline — explicit
+        # markers like <FIG-LEG>, <TSN>, <REF-H1> after the reference
+        # heading must survive zone enforcement.
+        if (
+            para_id in reference_zone_ids
+            and lock_tag
+            and not norm_tag.startswith("REF-")
+            and not inline_override
+        ):
             lock_tag = False
 
         if in_reference_zone and _looks_like_reference_entry(text):
@@ -812,17 +855,21 @@ def validate_and_repair(
                 changed = True
                 change_reason.append("list-position")
             elif not lock_tag and list_tag and tag.startswith(("BL", "NL", "UL", "TBL", "TNL", "TUL")):
-                # Align list position if needed
-                if tag != list_tag:
+                # Align list position if needed. Prefer semantic_list_tag when
+                # it was computed: _list_tag_from_meta drops nested-level
+                # indicators (BL2 -> BL), so using list_tag alone would demote
+                # BL2-MID to BL-MID when metadata only records list_kind=bullet.
+                target = semantic_list_tag or list_tag
+                if tag != target:
                     skip_alignment = False
                     # Prevent BL -> UL drift when metadata is ambiguous.
                     # But allow UL -> BL correction when list metadata indicates bullet lists.
-                    if tag.startswith("BL-") and list_tag.startswith("UL-"):
+                    if tag.startswith("BL-") and target.startswith("UL-"):
                         skip_alignment = True
                     if preserve_lists and tag.startswith("BL-"):
                         skip_alignment = True
                     if not skip_alignment:
-                        tag = list_tag
+                        tag = target
                         changed = True
                         change_reason.append("list-position")
             elif preserve_lists and tag.startswith("BL-"):
@@ -869,7 +916,10 @@ def validate_and_repair(
             came_from_h4h5 = True
 
         # Reference-zone deterministic mapping must happen before allowed-style filtering.
-        if in_reference_zone:
+        # Skip when the author asserted an inline tag override — explicit
+        # markers like <FIG-LEG>, <TSN>, <REF-H1> after the reference
+        # heading must not be coerced to REF-N/REF-U.
+        if in_reference_zone and not inline_override:
             text_stripped = text.strip()
             if text_stripped.lower().startswith("<ref-h2>") or meta.get("ref_heading"):
                 if tag != "REFH2":
@@ -877,7 +927,7 @@ def validate_and_repair(
                     changed = True
                     change_reason.append("ref-zone-heading")
             elif tag.startswith(("UL-", "BL-")) and tag not in {"SR", "SRH1"}:
-                desired_ref = "REF-U" if _starts_with_ref_bullet(text) else "REF-N"
+                desired_ref = "REF-N" if _starts_with_number(text) else "REF-U"
                 if tag != desired_ref:
                     tag = desired_ref
                     changed = True
@@ -886,7 +936,7 @@ def validate_and_repair(
                 # Preserve appendix reference family tags in appendix/reference sections.
                 pass
             elif tag not in {"SR", "SRH1"} and _looks_like_reference_entry(text):
-                desired_ref = "REF-U" if _starts_with_ref_bullet(text) else "REF-N"
+                desired_ref = "REF-N" if _starts_with_number(text) else "REF-U"
                 if tag != desired_ref:
                     tag = desired_ref
                     changed = True
@@ -946,6 +996,9 @@ def validate_and_repair(
     for idx, clf in enumerate(repaired):
         para_id = clf.get("id")
         block = block_lookup.get(para_id, {})
+        # Author-asserted inline overrides survive BACK_MATTER downgrade.
+        if block.get("_inline_tag_override"):
+            continue
         zone = block.get("metadata", {}).get("context_zone", "BODY")
         tag = clf.get("tag", "")
 
@@ -1082,6 +1135,10 @@ def validate_and_repair(
         para_id = clf.get("id")
         block = block_lookup.get(para_id, {})
         meta = block.get("metadata", {})
+        # Author-asserted inline tag overrides (e.g. <FIG-LEG>, <TSN>,
+        # <REF-H1>) survive even when sitting inside the reference zone.
+        if block.get("_inline_tag_override"):
+            continue
         in_reference_zone = bool(meta.get("is_reference_zone")) or (
             meta.get("context_zone") in {"REFERENCE", "BACK_MATTER"} and meta.get("is_reference_zone")
         )
@@ -1107,7 +1164,7 @@ def validate_and_repair(
         if not _looks_like_reference_entry(text):
             continue
 
-        desired = "REF-U" if _starts_with_ref_bullet(text) else "REF-N"
+        desired = "REF-N" if _starts_with_number(text) else "REF-U"
         if clf.get("tag") != desired:
             clf["tag"] = desired
             clf["confidence"] = max(float(clf.get("confidence", 0)), 0.99)
@@ -1129,6 +1186,10 @@ def validate_and_repair(
     for clf in repaired:
         para_id = clf.get("id")
         block = block_lookup.get(para_id, {})
+        # Author-asserted inline overrides survive marker-driven ref-section
+        # coercion as well.
+        if block.get("_inline_tag_override"):
+            continue
         meta = block.get("metadata", {})
         text = (block.get("text", "") or "").strip()
         tag = clf.get("tag", "")
@@ -1194,5 +1255,30 @@ def validate_and_repair(
         metrics["alias_resolved"],
         metrics["zone_repaired"],
     )
+
+    # Tag distribution after repair + top coercion transitions.
+    _after_tags = Counter(str(c.get("tag", "")) for c in repaired)
+    _coercions: Counter = Counter()
+    _clf_by_id = {c.get("id"): c for c in classifications}
+    for fixed in repaired:
+        orig = _clf_by_id.get(fixed.get("id"))
+        if orig is None:
+            continue
+        o_tag = str(orig.get("tag", ""))
+        f_tag = str(fixed.get("tag", ""))
+        if o_tag != f_tag:
+            _coercions[f"{o_tag} -> {f_tag}"] += 1
+    logger.info("TAG_DISTRIBUTION_BEFORE %s", dict(_before_tags.most_common()))
+    logger.info("TAG_DISTRIBUTION_AFTER %s", dict(_after_tags.most_common()))
+    logger.info("TAG_COERCIONS_TOP %s", dict(_coercions.most_common(20)))
+
+    # When the caller insists on LLM involvement, fail fast if any tag had
+    # to be repaired rather than silently accepting heuristic fallbacks.
+    if llm_required and metrics["invalid_styles"] > 0:
+        raise ValueError(
+            f"validate_and_repair: {metrics['invalid_styles']} tag(s) were "
+            f"outside allowed_styles and llm_required=True — refusing to "
+            f"return heuristic fallbacks."
+        )
 
     return repaired

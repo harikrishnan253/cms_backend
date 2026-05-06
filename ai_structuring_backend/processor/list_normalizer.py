@@ -218,6 +218,14 @@ def normalize_list_runs(
     n = len(classifications)
     result: list[dict] = list(classifications)
 
+    # Author-asserted inline tag overrides freeze the tag — neither this
+    # normalizer nor the run-boundary logic should rewrite them.
+    block_by_id = {b.get("id"): b for b in blocks if b.get("id") is not None}
+    frozen: set[int] = {
+        i for i, c in enumerate(classifications)
+        if block_by_id.get(c.get("id"), {}).get("_inline_tag_override")
+    }
+
     # Extract family for every entry up-front.
     families: list[str | None] = [
         _list_family(c.get("tag", "")) for c in classifications
@@ -250,6 +258,8 @@ def normalize_list_runs(
             family = families[k]
             if family is None:
                 continue
+            if k in frozen:
+                continue  # author-asserted inline tag — never rewrite
             new_tag = f"{family}-{pos}"
             old_tag = classifications[k].get("tag", "")
             if new_tag == old_tag:

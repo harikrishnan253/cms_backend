@@ -70,6 +70,9 @@ def _list_level_from_style_name(style_name: str) -> int:
         return 0
 
 
+from .inline_tag_marker import LEADING_INLINE_TAG_MARKER_RE as _LEADING_INLINE_TAG_MARKER_RE
+
+
 def _normalize_text(text: str) -> str:
     """
     Normalize text for comparison.
@@ -78,7 +81,11 @@ def _normalize_text(text: str) -> str:
     - Strip whitespace
     - Normalize Unicode (NFKC)
     - Collapse multiple spaces
-    - DO NOT remove markers
+    - Strip a single leading inline tag marker (e.g. ``<CJC-TTL>``,
+      ``<T2>``, ``<TBL-MID>``). The reconstruction stage may consume
+      such a marker as an authoritative tag override and remove it from
+      the output text; the structural guard must treat that strip as a
+      legal style-only mutation, not a content change.
 
     Parameters
     ----------
@@ -93,11 +100,15 @@ def _normalize_text(text: str) -> str:
     # Strip whitespace
     text = text.strip()
 
+    # Strip a leading authoritative inline tag marker so the guard is
+    # blind to whether the reconstruction layer removed it. This is
+    # idempotent — applies to both input and output texts.
+    text = _LEADING_INLINE_TAG_MARKER_RE.sub("", text, count=1)
+
     # Normalize Unicode (NFKC)
     text = unicodedata.normalize('NFKC', text)
 
     # Collapse multiple spaces into one
-    import re
     text = re.sub(r' +', ' ', text)
 
     return text
